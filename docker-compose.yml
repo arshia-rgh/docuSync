@@ -1,0 +1,12 @@
+services:
+  main:
+    build:
+      dockerfile: Dockerfile
+    deploy:
+      mode: replicated
+      replicas: 1
+    restart: always
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
