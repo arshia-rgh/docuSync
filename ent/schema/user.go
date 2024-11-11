@@ -31,7 +31,9 @@ func (User) Fields() []ent.Field {
 			Default(time.Now()),
 		field.Time("updated_at").
 			Default(time.Now()).
-			UpdateDefault(time.Now()),
+			UpdateDefault(func() time.Time {
+				return time.Now()
+			}),
 	}
 }
 
