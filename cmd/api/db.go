@@ -1,7 +1,7 @@
 package main
 
 import (
-	"database/sql"
+	"docuSync/ent"
 	"fmt"
 	"log"
 	"os"
@@ -10,8 +10,8 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func openDB(dsn string) (*sql.DB, error) {
-	db, err := sql.Open("postgres", dsn)
+func openDB(dsn string) (*ent.Client, error) {
+	db, err := ent.Open("postgres", dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -19,7 +19,7 @@ func openDB(dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
-func initDB() *sql.DB {
+func initDB() *ent.Client {
 	var counts int
 
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
