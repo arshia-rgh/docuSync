@@ -1,9 +1,7 @@
-FROM golang:1.23.3-alpine
+FROM alpine:latest
 
 WORKDIR /app
 
-COPY . .
+COPY binaryApp /app
 
-RUN env CGO_ENABLED=0 go build -o app ./cmd/api
-
-CMD ["./app"]
+CMD ["/app/binaryApp"]
