@@ -21,6 +21,7 @@ func main() {
 	if err := client.Schema.Create(context.TODO()); err != nil {
 		log.Fatalf("failed creating schema resources: %v", err)
 	}
+	log.Println("migration done")
 	server := fiber.New()
 
 	err := server.Listen(fmt.Sprintf(":%v", webPort))
