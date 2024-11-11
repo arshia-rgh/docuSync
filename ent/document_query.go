@@ -4,8 +4,10 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"docuSync/ent/document"
 	"docuSync/ent/predicate"
+	"docuSync/ent/user"
 	"fmt"
 	"math"
 
@@ -18,10 +20,14 @@ import (
 // DocumentQuery is the builder for querying Document entities.
 type DocumentQuery struct {
 	config
-	ctx        *QueryContext
-	order      []document.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Document
+	ctx              *QueryContext
+	order            []document.OrderOption
+	inters           []Interceptor
+	predicates       []predicate.Document
+	withEditors      *UserQuery
+	withOwner        *UserQuery
+	withAllowedUsers *UserQuery
+	withFKs          bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -56,6 +62,72 @@ func (dq *DocumentQuery) Unique(unique bool) *DocumentQuery {
 func (dq *DocumentQuery) Order(o ...document.OrderOption) *DocumentQuery {
 	dq.order = append(dq.order, o...)
 	return dq
+}
+
+// QueryEditors chains the current query on the "editors" edge.
+func (dq *DocumentQuery) QueryEditors() *UserQuery {
+	query := (&UserClient{config: dq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := dq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := dq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(document.Table, document.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, document.EditorsTable, document.EditorsPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(dq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOwner chains the current query on the "owner" edge.
+func (dq *DocumentQuery) QueryOwner() *UserQuery {
+	query := (&UserClient{config: dq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := dq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := dq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(document.Table, document.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, document.OwnerTable, document.OwnerColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(dq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAllowedUsers chains the current query on the "allowed_users" edge.
+func (dq *DocumentQuery) QueryAllowedUsers() *UserQuery {
+	query := (&UserClient{config: dq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := dq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := dq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(document.Table, document.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, document.AllowedUsersTable, document.AllowedUsersPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(dq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Document entity from the query.
@@ -245,15 +317,51 @@ func (dq *DocumentQuery) Clone() *DocumentQuery {
 		return nil
 	}
 	return &DocumentQuery{
-		config:     dq.config,
-		ctx:        dq.ctx.Clone(),
-		order:      append([]document.OrderOption{}, dq.order...),
-		inters:     append([]Interceptor{}, dq.inters...),
-		predicates: append([]predicate.Document{}, dq.predicates...),
+		config:           dq.config,
+		ctx:              dq.ctx.Clone(),
+		order:            append([]document.OrderOption{}, dq.order...),
+		inters:           append([]Interceptor{}, dq.inters...),
+		predicates:       append([]predicate.Document{}, dq.predicates...),
+		withEditors:      dq.withEditors.Clone(),
+		withOwner:        dq.withOwner.Clone(),
+		withAllowedUsers: dq.withAllowedUsers.Clone(),
 		// clone intermediate query.
 		sql:  dq.sql.Clone(),
 		path: dq.path,
 	}
+}
+
+// WithEditors tells the query-builder to eager-load the nodes that are connected to
+// the "editors" edge. The optional arguments are used to configure the query builder of the edge.
+func (dq *DocumentQuery) WithEditors(opts ...func(*UserQuery)) *DocumentQuery {
+	query := (&UserClient{config: dq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	dq.withEditors = query
+	return dq
+}
+
+// WithOwner tells the query-builder to eager-load the nodes that are connected to
+// the "owner" edge. The optional arguments are used to configure the query builder of the edge.
+func (dq *DocumentQuery) WithOwner(opts ...func(*UserQuery)) *DocumentQuery {
+	query := (&UserClient{config: dq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	dq.withOwner = query
+	return dq
+}
+
+// WithAllowedUsers tells the query-builder to eager-load the nodes that are connected to
+// the "allowed_users" edge. The optional arguments are used to configure the query builder of the edge.
+func (dq *DocumentQuery) WithAllowedUsers(opts ...func(*UserQuery)) *DocumentQuery {
+	query := (&UserClient{config: dq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	dq.withAllowedUsers = query
+	return dq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -310,15 +418,28 @@ func (dq *DocumentQuery) prepareQuery(ctx context.Context) error {
 
 func (dq *DocumentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Document, error) {
 	var (
-		nodes = []*Document{}
-		_spec = dq.querySpec()
+		nodes       = []*Document{}
+		withFKs     = dq.withFKs
+		_spec       = dq.querySpec()
+		loadedTypes = [3]bool{
+			dq.withEditors != nil,
+			dq.withOwner != nil,
+			dq.withAllowedUsers != nil,
+		}
 	)
+	if dq.withOwner != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, document.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Document).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Document{config: dq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	for i := range hooks {
@@ -330,7 +451,182 @@ func (dq *DocumentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Doc
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := dq.withEditors; query != nil {
+		if err := dq.loadEditors(ctx, query, nodes,
+			func(n *Document) { n.Edges.Editors = []*User{} },
+			func(n *Document, e *User) { n.Edges.Editors = append(n.Edges.Editors, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := dq.withOwner; query != nil {
+		if err := dq.loadOwner(ctx, query, nodes, nil,
+			func(n *Document, e *User) { n.Edges.Owner = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := dq.withAllowedUsers; query != nil {
+		if err := dq.loadAllowedUsers(ctx, query, nodes,
+			func(n *Document) { n.Edges.AllowedUsers = []*User{} },
+			func(n *Document, e *User) { n.Edges.AllowedUsers = append(n.Edges.AllowedUsers, e) }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
+}
+
+func (dq *DocumentQuery) loadEditors(ctx context.Context, query *UserQuery, nodes []*Document, init func(*Document), assign func(*Document, *User)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[int]*Document)
+	nids := make(map[int]map[*Document]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(document.EditorsTable)
+		s.Join(joinT).On(s.C(user.FieldID), joinT.C(document.EditorsPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(document.EditorsPrimaryKey[0]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(document.EditorsPrimaryKey[0]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(sql.NullInt64)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := int(values[0].(*sql.NullInt64).Int64)
+				inValue := int(values[1].(*sql.NullInt64).Int64)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*Document]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*User](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "editors" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
+func (dq *DocumentQuery) loadOwner(ctx context.Context, query *UserQuery, nodes []*Document, init func(*Document), assign func(*Document, *User)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Document)
+	for i := range nodes {
+		if nodes[i].user_owned_documents == nil {
+			continue
+		}
+		fk := *nodes[i].user_owned_documents
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "user_owned_documents" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (dq *DocumentQuery) loadAllowedUsers(ctx context.Context, query *UserQuery, nodes []*Document, init func(*Document), assign func(*Document, *User)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[int]*Document)
+	nids := make(map[int]map[*Document]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(document.AllowedUsersTable)
+		s.Join(joinT).On(s.C(user.FieldID), joinT.C(document.AllowedUsersPrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(document.AllowedUsersPrimaryKey[1]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(document.AllowedUsersPrimaryKey[1]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(sql.NullInt64)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := int(values[0].(*sql.NullInt64).Int64)
+				inValue := int(values[1].(*sql.NullInt64).Int64)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*Document]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*User](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "allowed_users" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
 }
 
 func (dq *DocumentQuery) sqlCount(ctx context.Context) (int, error) {

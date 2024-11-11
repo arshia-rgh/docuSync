@@ -6,6 +6,7 @@ import (
 	"docuSync/ent/predicate"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 // ID filters vertices based on their ID field.
@@ -51,6 +52,75 @@ func IDLT(id int) predicate.User {
 // IDLTE applies the LTE predicate on the ID field.
 func IDLTE(id int) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldID, id))
+}
+
+// HasAllowedDocuments applies the HasEdge predicate on the "allowed_documents" edge.
+func HasAllowedDocuments() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, AllowedDocumentsTable, AllowedDocumentsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAllowedDocumentsWith applies the HasEdge predicate on the "allowed_documents" edge with a given conditions (other predicates).
+func HasAllowedDocumentsWith(preds ...predicate.Document) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newAllowedDocumentsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasOwnedDocuments applies the HasEdge predicate on the "owned_documents" edge.
+func HasOwnedDocuments() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OwnedDocumentsTable, OwnedDocumentsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOwnedDocumentsWith applies the HasEdge predicate on the "owned_documents" edge with a given conditions (other predicates).
+func HasOwnedDocumentsWith(preds ...predicate.Document) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newOwnedDocumentsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasEditedDocuments applies the HasEdge predicate on the "edited_documents" edge.
+func HasEditedDocuments() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, EditedDocumentsTable, EditedDocumentsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasEditedDocumentsWith applies the HasEdge predicate on the "edited_documents" edge with a given conditions (other predicates).
+func HasEditedDocumentsWith(preds ...predicate.Document) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newEditedDocumentsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

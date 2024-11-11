@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"docuSync/ent/document"
 	"docuSync/ent/user"
 	"fmt"
 
@@ -16,6 +17,51 @@ type UserCreate struct {
 	config
 	mutation *UserMutation
 	hooks    []Hook
+}
+
+// AddAllowedDocumentIDs adds the "allowed_documents" edge to the Document entity by IDs.
+func (uc *UserCreate) AddAllowedDocumentIDs(ids ...int) *UserCreate {
+	uc.mutation.AddAllowedDocumentIDs(ids...)
+	return uc
+}
+
+// AddAllowedDocuments adds the "allowed_documents" edges to the Document entity.
+func (uc *UserCreate) AddAllowedDocuments(d ...*Document) *UserCreate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uc.AddAllowedDocumentIDs(ids...)
+}
+
+// AddOwnedDocumentIDs adds the "owned_documents" edge to the Document entity by IDs.
+func (uc *UserCreate) AddOwnedDocumentIDs(ids ...int) *UserCreate {
+	uc.mutation.AddOwnedDocumentIDs(ids...)
+	return uc
+}
+
+// AddOwnedDocuments adds the "owned_documents" edges to the Document entity.
+func (uc *UserCreate) AddOwnedDocuments(d ...*Document) *UserCreate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uc.AddOwnedDocumentIDs(ids...)
+}
+
+// AddEditedDocumentIDs adds the "edited_documents" edge to the Document entity by IDs.
+func (uc *UserCreate) AddEditedDocumentIDs(ids ...int) *UserCreate {
+	uc.mutation.AddEditedDocumentIDs(ids...)
+	return uc
+}
+
+// AddEditedDocuments adds the "edited_documents" edges to the Document entity.
+func (uc *UserCreate) AddEditedDocuments(d ...*Document) *UserCreate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uc.AddEditedDocumentIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -78,6 +124,54 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_node = &User{config: uc.config}
 		_spec = sqlgraph.NewCreateSpec(user.Table, sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt))
 	)
+	if nodes := uc.mutation.AllowedDocumentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.AllowedDocumentsTable,
+			Columns: user.AllowedDocumentsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(document.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.OwnedDocumentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.OwnedDocumentsTable,
+			Columns: []string{user.OwnedDocumentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(document.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.EditedDocumentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   user.EditedDocumentsTable,
+			Columns: user.EditedDocumentsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(document.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 

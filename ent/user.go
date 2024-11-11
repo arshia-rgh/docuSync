@@ -15,8 +15,51 @@ import (
 type User struct {
 	config
 	// ID of the ent.
-	ID           int `json:"id,omitempty"`
+	ID int `json:"id,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the UserQuery when eager-loading is set.
+	Edges        UserEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// UserEdges holds the relations/edges for other nodes in the graph.
+type UserEdges struct {
+	// AllowedDocuments holds the value of the allowed_documents edge.
+	AllowedDocuments []*Document `json:"allowed_documents,omitempty"`
+	// OwnedDocuments holds the value of the owned_documents edge.
+	OwnedDocuments []*Document `json:"owned_documents,omitempty"`
+	// EditedDocuments holds the value of the edited_documents edge.
+	EditedDocuments []*Document `json:"edited_documents,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [3]bool
+}
+
+// AllowedDocumentsOrErr returns the AllowedDocuments value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) AllowedDocumentsOrErr() ([]*Document, error) {
+	if e.loadedTypes[0] {
+		return e.AllowedDocuments, nil
+	}
+	return nil, &NotLoadedError{edge: "allowed_documents"}
+}
+
+// OwnedDocumentsOrErr returns the OwnedDocuments value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) OwnedDocumentsOrErr() ([]*Document, error) {
+	if e.loadedTypes[1] {
+		return e.OwnedDocuments, nil
+	}
+	return nil, &NotLoadedError{edge: "owned_documents"}
+}
+
+// EditedDocumentsOrErr returns the EditedDocuments value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) EditedDocumentsOrErr() ([]*Document, error) {
+	if e.loadedTypes[2] {
+		return e.EditedDocuments, nil
+	}
+	return nil, &NotLoadedError{edge: "edited_documents"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -58,6 +101,21 @@ func (u *User) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (u *User) Value(name string) (ent.Value, error) {
 	return u.selectValues.Get(name)
+}
+
+// QueryAllowedDocuments queries the "allowed_documents" edge of the User entity.
+func (u *User) QueryAllowedDocuments() *DocumentQuery {
+	return NewUserClient(u.config).QueryAllowedDocuments(u)
+}
+
+// QueryOwnedDocuments queries the "owned_documents" edge of the User entity.
+func (u *User) QueryOwnedDocuments() *DocumentQuery {
+	return NewUserClient(u.config).QueryOwnedDocuments(u)
+}
+
+// QueryEditedDocuments queries the "edited_documents" edge of the User entity.
+func (u *User) QueryEditedDocuments() *DocumentQuery {
+	return NewUserClient(u.config).QueryEditedDocuments(u)
 }
 
 // Update returns a builder for updating this User.

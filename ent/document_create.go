@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"docuSync/ent/document"
+	"docuSync/ent/user"
 	"fmt"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -16,6 +17,55 @@ type DocumentCreate struct {
 	config
 	mutation *DocumentMutation
 	hooks    []Hook
+}
+
+// AddEditorIDs adds the "editors" edge to the User entity by IDs.
+func (dc *DocumentCreate) AddEditorIDs(ids ...int) *DocumentCreate {
+	dc.mutation.AddEditorIDs(ids...)
+	return dc
+}
+
+// AddEditors adds the "editors" edges to the User entity.
+func (dc *DocumentCreate) AddEditors(u ...*User) *DocumentCreate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return dc.AddEditorIDs(ids...)
+}
+
+// SetOwnerID sets the "owner" edge to the User entity by ID.
+func (dc *DocumentCreate) SetOwnerID(id int) *DocumentCreate {
+	dc.mutation.SetOwnerID(id)
+	return dc
+}
+
+// SetNillableOwnerID sets the "owner" edge to the User entity by ID if the given value is not nil.
+func (dc *DocumentCreate) SetNillableOwnerID(id *int) *DocumentCreate {
+	if id != nil {
+		dc = dc.SetOwnerID(*id)
+	}
+	return dc
+}
+
+// SetOwner sets the "owner" edge to the User entity.
+func (dc *DocumentCreate) SetOwner(u *User) *DocumentCreate {
+	return dc.SetOwnerID(u.ID)
+}
+
+// AddAllowedUserIDs adds the "allowed_users" edge to the User entity by IDs.
+func (dc *DocumentCreate) AddAllowedUserIDs(ids ...int) *DocumentCreate {
+	dc.mutation.AddAllowedUserIDs(ids...)
+	return dc
+}
+
+// AddAllowedUsers adds the "allowed_users" edges to the User entity.
+func (dc *DocumentCreate) AddAllowedUsers(u ...*User) *DocumentCreate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return dc.AddAllowedUserIDs(ids...)
 }
 
 // Mutation returns the DocumentMutation object of the builder.
@@ -78,6 +128,55 @@ func (dc *DocumentCreate) createSpec() (*Document, *sqlgraph.CreateSpec) {
 		_node = &Document{config: dc.config}
 		_spec = sqlgraph.NewCreateSpec(document.Table, sqlgraph.NewFieldSpec(document.FieldID, field.TypeInt))
 	)
+	if nodes := dc.mutation.EditorsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   document.EditorsTable,
+			Columns: document.EditorsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := dc.mutation.OwnerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   document.OwnerTable,
+			Columns: []string{document.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.user_owned_documents = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := dc.mutation.AllowedUsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   document.AllowedUsersTable,
+			Columns: document.AllowedUsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 

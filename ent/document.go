@@ -4,6 +4,7 @@ package ent
 
 import (
 	"docuSync/ent/document"
+	"docuSync/ent/user"
 	"fmt"
 	"strings"
 
@@ -15,8 +16,54 @@ import (
 type Document struct {
 	config
 	// ID of the ent.
-	ID           int `json:"id,omitempty"`
-	selectValues sql.SelectValues
+	ID int `json:"id,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the DocumentQuery when eager-loading is set.
+	Edges                DocumentEdges `json:"edges"`
+	user_owned_documents *int
+	selectValues         sql.SelectValues
+}
+
+// DocumentEdges holds the relations/edges for other nodes in the graph.
+type DocumentEdges struct {
+	// Editors holds the value of the editors edge.
+	Editors []*User `json:"editors,omitempty"`
+	// Owner holds the value of the owner edge.
+	Owner *User `json:"owner,omitempty"`
+	// AllowedUsers holds the value of the allowed_users edge.
+	AllowedUsers []*User `json:"allowed_users,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [3]bool
+}
+
+// EditorsOrErr returns the Editors value or an error if the edge
+// was not loaded in eager-loading.
+func (e DocumentEdges) EditorsOrErr() ([]*User, error) {
+	if e.loadedTypes[0] {
+		return e.Editors, nil
+	}
+	return nil, &NotLoadedError{edge: "editors"}
+}
+
+// OwnerOrErr returns the Owner value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e DocumentEdges) OwnerOrErr() (*User, error) {
+	if e.Owner != nil {
+		return e.Owner, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: user.Label}
+	}
+	return nil, &NotLoadedError{edge: "owner"}
+}
+
+// AllowedUsersOrErr returns the AllowedUsers value or an error if the edge
+// was not loaded in eager-loading.
+func (e DocumentEdges) AllowedUsersOrErr() ([]*User, error) {
+	if e.loadedTypes[2] {
+		return e.AllowedUsers, nil
+	}
+	return nil, &NotLoadedError{edge: "allowed_users"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -25,6 +72,8 @@ func (*Document) scanValues(columns []string) ([]any, error) {
 	for i := range columns {
 		switch columns[i] {
 		case document.FieldID:
+			values[i] = new(sql.NullInt64)
+		case document.ForeignKeys[0]: // user_owned_documents
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -47,6 +96,13 @@ func (d *Document) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			d.ID = int(value.Int64)
+		case document.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field user_owned_documents", value)
+			} else if value.Valid {
+				d.user_owned_documents = new(int)
+				*d.user_owned_documents = int(value.Int64)
+			}
 		default:
 			d.selectValues.Set(columns[i], values[i])
 		}
@@ -58,6 +114,21 @@ func (d *Document) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (d *Document) Value(name string) (ent.Value, error) {
 	return d.selectValues.Get(name)
+}
+
+// QueryEditors queries the "editors" edge of the Document entity.
+func (d *Document) QueryEditors() *UserQuery {
+	return NewDocumentClient(d.config).QueryEditors(d)
+}
+
+// QueryOwner queries the "owner" edge of the Document entity.
+func (d *Document) QueryOwner() *UserQuery {
+	return NewDocumentClient(d.config).QueryOwner(d)
+}
+
+// QueryAllowedUsers queries the "allowed_users" edge of the Document entity.
+func (d *Document) QueryAllowedUsers() *UserQuery {
+	return NewDocumentClient(d.config).QueryAllowedUsers(d)
 }
 
 // Update returns a builder for updating this Document.

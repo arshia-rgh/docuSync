@@ -4,7 +4,9 @@ package ent
 
 import (
 	"context"
+	"docuSync/ent/document"
 	"docuSync/ent/predicate"
+	"docuSync/ent/user"
 	"errors"
 	"fmt"
 	"sync"
@@ -29,13 +31,21 @@ const (
 // DocumentMutation represents an operation that mutates the Document nodes in the graph.
 type DocumentMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*Document, error)
-	predicates    []predicate.Document
+	op                   Op
+	typ                  string
+	id                   *int
+	clearedFields        map[string]struct{}
+	editors              map[int]struct{}
+	removededitors       map[int]struct{}
+	clearededitors       bool
+	owner                *int
+	clearedowner         bool
+	allowed_users        map[int]struct{}
+	removedallowed_users map[int]struct{}
+	clearedallowed_users bool
+	done                 bool
+	oldValue             func(context.Context) (*Document, error)
+	predicates           []predicate.Document
 }
 
 var _ ent.Mutation = (*DocumentMutation)(nil)
@@ -134,6 +144,153 @@ func (m *DocumentMutation) IDs(ctx context.Context) ([]int, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// AddEditorIDs adds the "editors" edge to the User entity by ids.
+func (m *DocumentMutation) AddEditorIDs(ids ...int) {
+	if m.editors == nil {
+		m.editors = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.editors[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEditors clears the "editors" edge to the User entity.
+func (m *DocumentMutation) ClearEditors() {
+	m.clearededitors = true
+}
+
+// EditorsCleared reports if the "editors" edge to the User entity was cleared.
+func (m *DocumentMutation) EditorsCleared() bool {
+	return m.clearededitors
+}
+
+// RemoveEditorIDs removes the "editors" edge to the User entity by IDs.
+func (m *DocumentMutation) RemoveEditorIDs(ids ...int) {
+	if m.removededitors == nil {
+		m.removededitors = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.editors, ids[i])
+		m.removededitors[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEditors returns the removed IDs of the "editors" edge to the User entity.
+func (m *DocumentMutation) RemovedEditorsIDs() (ids []int) {
+	for id := range m.removededitors {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EditorsIDs returns the "editors" edge IDs in the mutation.
+func (m *DocumentMutation) EditorsIDs() (ids []int) {
+	for id := range m.editors {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEditors resets all changes to the "editors" edge.
+func (m *DocumentMutation) ResetEditors() {
+	m.editors = nil
+	m.clearededitors = false
+	m.removededitors = nil
+}
+
+// SetOwnerID sets the "owner" edge to the User entity by id.
+func (m *DocumentMutation) SetOwnerID(id int) {
+	m.owner = &id
+}
+
+// ClearOwner clears the "owner" edge to the User entity.
+func (m *DocumentMutation) ClearOwner() {
+	m.clearedowner = true
+}
+
+// OwnerCleared reports if the "owner" edge to the User entity was cleared.
+func (m *DocumentMutation) OwnerCleared() bool {
+	return m.clearedowner
+}
+
+// OwnerID returns the "owner" edge ID in the mutation.
+func (m *DocumentMutation) OwnerID() (id int, exists bool) {
+	if m.owner != nil {
+		return *m.owner, true
+	}
+	return
+}
+
+// OwnerIDs returns the "owner" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// OwnerID instead. It exists only for internal usage by the builders.
+func (m *DocumentMutation) OwnerIDs() (ids []int) {
+	if id := m.owner; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetOwner resets all changes to the "owner" edge.
+func (m *DocumentMutation) ResetOwner() {
+	m.owner = nil
+	m.clearedowner = false
+}
+
+// AddAllowedUserIDs adds the "allowed_users" edge to the User entity by ids.
+func (m *DocumentMutation) AddAllowedUserIDs(ids ...int) {
+	if m.allowed_users == nil {
+		m.allowed_users = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.allowed_users[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAllowedUsers clears the "allowed_users" edge to the User entity.
+func (m *DocumentMutation) ClearAllowedUsers() {
+	m.clearedallowed_users = true
+}
+
+// AllowedUsersCleared reports if the "allowed_users" edge to the User entity was cleared.
+func (m *DocumentMutation) AllowedUsersCleared() bool {
+	return m.clearedallowed_users
+}
+
+// RemoveAllowedUserIDs removes the "allowed_users" edge to the User entity by IDs.
+func (m *DocumentMutation) RemoveAllowedUserIDs(ids ...int) {
+	if m.removedallowed_users == nil {
+		m.removedallowed_users = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.allowed_users, ids[i])
+		m.removedallowed_users[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAllowedUsers returns the removed IDs of the "allowed_users" edge to the User entity.
+func (m *DocumentMutation) RemovedAllowedUsersIDs() (ids []int) {
+	for id := range m.removedallowed_users {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// AllowedUsersIDs returns the "allowed_users" edge IDs in the mutation.
+func (m *DocumentMutation) AllowedUsersIDs() (ids []int) {
+	for id := range m.allowed_users {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAllowedUsers resets all changes to the "allowed_users" edge.
+func (m *DocumentMutation) ResetAllowedUsers() {
+	m.allowed_users = nil
+	m.clearedallowed_users = false
+	m.removedallowed_users = nil
 }
 
 // Where appends a list predicates to the DocumentMutation builder.
@@ -244,62 +401,151 @@ func (m *DocumentMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *DocumentMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 3)
+	if m.editors != nil {
+		edges = append(edges, document.EdgeEditors)
+	}
+	if m.owner != nil {
+		edges = append(edges, document.EdgeOwner)
+	}
+	if m.allowed_users != nil {
+		edges = append(edges, document.EdgeAllowedUsers)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *DocumentMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case document.EdgeEditors:
+		ids := make([]ent.Value, 0, len(m.editors))
+		for id := range m.editors {
+			ids = append(ids, id)
+		}
+		return ids
+	case document.EdgeOwner:
+		if id := m.owner; id != nil {
+			return []ent.Value{*id}
+		}
+	case document.EdgeAllowedUsers:
+		ids := make([]ent.Value, 0, len(m.allowed_users))
+		for id := range m.allowed_users {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *DocumentMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 3)
+	if m.removededitors != nil {
+		edges = append(edges, document.EdgeEditors)
+	}
+	if m.removedallowed_users != nil {
+		edges = append(edges, document.EdgeAllowedUsers)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *DocumentMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case document.EdgeEditors:
+		ids := make([]ent.Value, 0, len(m.removededitors))
+		for id := range m.removededitors {
+			ids = append(ids, id)
+		}
+		return ids
+	case document.EdgeAllowedUsers:
+		ids := make([]ent.Value, 0, len(m.removedallowed_users))
+		for id := range m.removedallowed_users {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *DocumentMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 3)
+	if m.clearededitors {
+		edges = append(edges, document.EdgeEditors)
+	}
+	if m.clearedowner {
+		edges = append(edges, document.EdgeOwner)
+	}
+	if m.clearedallowed_users {
+		edges = append(edges, document.EdgeAllowedUsers)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *DocumentMutation) EdgeCleared(name string) bool {
+	switch name {
+	case document.EdgeEditors:
+		return m.clearededitors
+	case document.EdgeOwner:
+		return m.clearedowner
+	case document.EdgeAllowedUsers:
+		return m.clearedallowed_users
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *DocumentMutation) ClearEdge(name string) error {
+	switch name {
+	case document.EdgeOwner:
+		m.ClearOwner()
+		return nil
+	}
 	return fmt.Errorf("unknown Document unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *DocumentMutation) ResetEdge(name string) error {
+	switch name {
+	case document.EdgeEditors:
+		m.ResetEditors()
+		return nil
+	case document.EdgeOwner:
+		m.ResetOwner()
+		return nil
+	case document.EdgeAllowedUsers:
+		m.ResetAllowedUsers()
+		return nil
+	}
 	return fmt.Errorf("unknown Document edge %s", name)
 }
 
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*User, error)
-	predicates    []predicate.User
+	op                       Op
+	typ                      string
+	id                       *int
+	clearedFields            map[string]struct{}
+	allowed_documents        map[int]struct{}
+	removedallowed_documents map[int]struct{}
+	clearedallowed_documents bool
+	owned_documents          map[int]struct{}
+	removedowned_documents   map[int]struct{}
+	clearedowned_documents   bool
+	edited_documents         map[int]struct{}
+	removededited_documents  map[int]struct{}
+	clearededited_documents  bool
+	done                     bool
+	oldValue                 func(context.Context) (*User, error)
+	predicates               []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -398,6 +644,168 @@ func (m *UserMutation) IDs(ctx context.Context) ([]int, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// AddAllowedDocumentIDs adds the "allowed_documents" edge to the Document entity by ids.
+func (m *UserMutation) AddAllowedDocumentIDs(ids ...int) {
+	if m.allowed_documents == nil {
+		m.allowed_documents = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.allowed_documents[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAllowedDocuments clears the "allowed_documents" edge to the Document entity.
+func (m *UserMutation) ClearAllowedDocuments() {
+	m.clearedallowed_documents = true
+}
+
+// AllowedDocumentsCleared reports if the "allowed_documents" edge to the Document entity was cleared.
+func (m *UserMutation) AllowedDocumentsCleared() bool {
+	return m.clearedallowed_documents
+}
+
+// RemoveAllowedDocumentIDs removes the "allowed_documents" edge to the Document entity by IDs.
+func (m *UserMutation) RemoveAllowedDocumentIDs(ids ...int) {
+	if m.removedallowed_documents == nil {
+		m.removedallowed_documents = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.allowed_documents, ids[i])
+		m.removedallowed_documents[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAllowedDocuments returns the removed IDs of the "allowed_documents" edge to the Document entity.
+func (m *UserMutation) RemovedAllowedDocumentsIDs() (ids []int) {
+	for id := range m.removedallowed_documents {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// AllowedDocumentsIDs returns the "allowed_documents" edge IDs in the mutation.
+func (m *UserMutation) AllowedDocumentsIDs() (ids []int) {
+	for id := range m.allowed_documents {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAllowedDocuments resets all changes to the "allowed_documents" edge.
+func (m *UserMutation) ResetAllowedDocuments() {
+	m.allowed_documents = nil
+	m.clearedallowed_documents = false
+	m.removedallowed_documents = nil
+}
+
+// AddOwnedDocumentIDs adds the "owned_documents" edge to the Document entity by ids.
+func (m *UserMutation) AddOwnedDocumentIDs(ids ...int) {
+	if m.owned_documents == nil {
+		m.owned_documents = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.owned_documents[ids[i]] = struct{}{}
+	}
+}
+
+// ClearOwnedDocuments clears the "owned_documents" edge to the Document entity.
+func (m *UserMutation) ClearOwnedDocuments() {
+	m.clearedowned_documents = true
+}
+
+// OwnedDocumentsCleared reports if the "owned_documents" edge to the Document entity was cleared.
+func (m *UserMutation) OwnedDocumentsCleared() bool {
+	return m.clearedowned_documents
+}
+
+// RemoveOwnedDocumentIDs removes the "owned_documents" edge to the Document entity by IDs.
+func (m *UserMutation) RemoveOwnedDocumentIDs(ids ...int) {
+	if m.removedowned_documents == nil {
+		m.removedowned_documents = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.owned_documents, ids[i])
+		m.removedowned_documents[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedOwnedDocuments returns the removed IDs of the "owned_documents" edge to the Document entity.
+func (m *UserMutation) RemovedOwnedDocumentsIDs() (ids []int) {
+	for id := range m.removedowned_documents {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// OwnedDocumentsIDs returns the "owned_documents" edge IDs in the mutation.
+func (m *UserMutation) OwnedDocumentsIDs() (ids []int) {
+	for id := range m.owned_documents {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetOwnedDocuments resets all changes to the "owned_documents" edge.
+func (m *UserMutation) ResetOwnedDocuments() {
+	m.owned_documents = nil
+	m.clearedowned_documents = false
+	m.removedowned_documents = nil
+}
+
+// AddEditedDocumentIDs adds the "edited_documents" edge to the Document entity by ids.
+func (m *UserMutation) AddEditedDocumentIDs(ids ...int) {
+	if m.edited_documents == nil {
+		m.edited_documents = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.edited_documents[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEditedDocuments clears the "edited_documents" edge to the Document entity.
+func (m *UserMutation) ClearEditedDocuments() {
+	m.clearededited_documents = true
+}
+
+// EditedDocumentsCleared reports if the "edited_documents" edge to the Document entity was cleared.
+func (m *UserMutation) EditedDocumentsCleared() bool {
+	return m.clearededited_documents
+}
+
+// RemoveEditedDocumentIDs removes the "edited_documents" edge to the Document entity by IDs.
+func (m *UserMutation) RemoveEditedDocumentIDs(ids ...int) {
+	if m.removededited_documents == nil {
+		m.removededited_documents = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.edited_documents, ids[i])
+		m.removededited_documents[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEditedDocuments returns the removed IDs of the "edited_documents" edge to the Document entity.
+func (m *UserMutation) RemovedEditedDocumentsIDs() (ids []int) {
+	for id := range m.removededited_documents {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EditedDocumentsIDs returns the "edited_documents" edge IDs in the mutation.
+func (m *UserMutation) EditedDocumentsIDs() (ids []int) {
+	for id := range m.edited_documents {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEditedDocuments resets all changes to the "edited_documents" edge.
+func (m *UserMutation) ResetEditedDocuments() {
+	m.edited_documents = nil
+	m.clearededited_documents = false
+	m.removededited_documents = nil
 }
 
 // Where appends a list predicates to the UserMutation builder.
@@ -508,48 +916,136 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 3)
+	if m.allowed_documents != nil {
+		edges = append(edges, user.EdgeAllowedDocuments)
+	}
+	if m.owned_documents != nil {
+		edges = append(edges, user.EdgeOwnedDocuments)
+	}
+	if m.edited_documents != nil {
+		edges = append(edges, user.EdgeEditedDocuments)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *UserMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case user.EdgeAllowedDocuments:
+		ids := make([]ent.Value, 0, len(m.allowed_documents))
+		for id := range m.allowed_documents {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeOwnedDocuments:
+		ids := make([]ent.Value, 0, len(m.owned_documents))
+		for id := range m.owned_documents {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeEditedDocuments:
+		ids := make([]ent.Value, 0, len(m.edited_documents))
+		for id := range m.edited_documents {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 3)
+	if m.removedallowed_documents != nil {
+		edges = append(edges, user.EdgeAllowedDocuments)
+	}
+	if m.removedowned_documents != nil {
+		edges = append(edges, user.EdgeOwnedDocuments)
+	}
+	if m.removededited_documents != nil {
+		edges = append(edges, user.EdgeEditedDocuments)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *UserMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case user.EdgeAllowedDocuments:
+		ids := make([]ent.Value, 0, len(m.removedallowed_documents))
+		for id := range m.removedallowed_documents {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeOwnedDocuments:
+		ids := make([]ent.Value, 0, len(m.removedowned_documents))
+		for id := range m.removedowned_documents {
+			ids = append(ids, id)
+		}
+		return ids
+	case user.EdgeEditedDocuments:
+		ids := make([]ent.Value, 0, len(m.removededited_documents))
+		for id := range m.removededited_documents {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 3)
+	if m.clearedallowed_documents {
+		edges = append(edges, user.EdgeAllowedDocuments)
+	}
+	if m.clearedowned_documents {
+		edges = append(edges, user.EdgeOwnedDocuments)
+	}
+	if m.clearededited_documents {
+		edges = append(edges, user.EdgeEditedDocuments)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *UserMutation) EdgeCleared(name string) bool {
+	switch name {
+	case user.EdgeAllowedDocuments:
+		return m.clearedallowed_documents
+	case user.EdgeOwnedDocuments:
+		return m.clearedowned_documents
+	case user.EdgeEditedDocuments:
+		return m.clearededited_documents
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *UserMutation) ClearEdge(name string) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown User unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *UserMutation) ResetEdge(name string) error {
+	switch name {
+	case user.EdgeAllowedDocuments:
+		m.ResetAllowedDocuments()
+		return nil
+	case user.EdgeOwnedDocuments:
+		m.ResetOwnedDocuments()
+		return nil
+	case user.EdgeEditedDocuments:
+		m.ResetEditedDocuments()
+		return nil
+	}
 	return fmt.Errorf("unknown User edge %s", name)
 }

@@ -6,6 +6,7 @@ import (
 	"context"
 	"docuSync/ent/document"
 	"docuSync/ent/predicate"
+	"docuSync/ent/user"
 	"errors"
 	"fmt"
 
@@ -27,9 +28,106 @@ func (du *DocumentUpdate) Where(ps ...predicate.Document) *DocumentUpdate {
 	return du
 }
 
+// AddEditorIDs adds the "editors" edge to the User entity by IDs.
+func (du *DocumentUpdate) AddEditorIDs(ids ...int) *DocumentUpdate {
+	du.mutation.AddEditorIDs(ids...)
+	return du
+}
+
+// AddEditors adds the "editors" edges to the User entity.
+func (du *DocumentUpdate) AddEditors(u ...*User) *DocumentUpdate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return du.AddEditorIDs(ids...)
+}
+
+// SetOwnerID sets the "owner" edge to the User entity by ID.
+func (du *DocumentUpdate) SetOwnerID(id int) *DocumentUpdate {
+	du.mutation.SetOwnerID(id)
+	return du
+}
+
+// SetNillableOwnerID sets the "owner" edge to the User entity by ID if the given value is not nil.
+func (du *DocumentUpdate) SetNillableOwnerID(id *int) *DocumentUpdate {
+	if id != nil {
+		du = du.SetOwnerID(*id)
+	}
+	return du
+}
+
+// SetOwner sets the "owner" edge to the User entity.
+func (du *DocumentUpdate) SetOwner(u *User) *DocumentUpdate {
+	return du.SetOwnerID(u.ID)
+}
+
+// AddAllowedUserIDs adds the "allowed_users" edge to the User entity by IDs.
+func (du *DocumentUpdate) AddAllowedUserIDs(ids ...int) *DocumentUpdate {
+	du.mutation.AddAllowedUserIDs(ids...)
+	return du
+}
+
+// AddAllowedUsers adds the "allowed_users" edges to the User entity.
+func (du *DocumentUpdate) AddAllowedUsers(u ...*User) *DocumentUpdate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return du.AddAllowedUserIDs(ids...)
+}
+
 // Mutation returns the DocumentMutation object of the builder.
 func (du *DocumentUpdate) Mutation() *DocumentMutation {
 	return du.mutation
+}
+
+// ClearEditors clears all "editors" edges to the User entity.
+func (du *DocumentUpdate) ClearEditors() *DocumentUpdate {
+	du.mutation.ClearEditors()
+	return du
+}
+
+// RemoveEditorIDs removes the "editors" edge to User entities by IDs.
+func (du *DocumentUpdate) RemoveEditorIDs(ids ...int) *DocumentUpdate {
+	du.mutation.RemoveEditorIDs(ids...)
+	return du
+}
+
+// RemoveEditors removes "editors" edges to User entities.
+func (du *DocumentUpdate) RemoveEditors(u ...*User) *DocumentUpdate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return du.RemoveEditorIDs(ids...)
+}
+
+// ClearOwner clears the "owner" edge to the User entity.
+func (du *DocumentUpdate) ClearOwner() *DocumentUpdate {
+	du.mutation.ClearOwner()
+	return du
+}
+
+// ClearAllowedUsers clears all "allowed_users" edges to the User entity.
+func (du *DocumentUpdate) ClearAllowedUsers() *DocumentUpdate {
+	du.mutation.ClearAllowedUsers()
+	return du
+}
+
+// RemoveAllowedUserIDs removes the "allowed_users" edge to User entities by IDs.
+func (du *DocumentUpdate) RemoveAllowedUserIDs(ids ...int) *DocumentUpdate {
+	du.mutation.RemoveAllowedUserIDs(ids...)
+	return du
+}
+
+// RemoveAllowedUsers removes "allowed_users" edges to User entities.
+func (du *DocumentUpdate) RemoveAllowedUsers(u ...*User) *DocumentUpdate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return du.RemoveAllowedUserIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -68,6 +166,125 @@ func (du *DocumentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if du.mutation.EditorsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   document.EditorsTable,
+			Columns: document.EditorsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := du.mutation.RemovedEditorsIDs(); len(nodes) > 0 && !du.mutation.EditorsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   document.EditorsTable,
+			Columns: document.EditorsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := du.mutation.EditorsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   document.EditorsTable,
+			Columns: document.EditorsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if du.mutation.OwnerCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   document.OwnerTable,
+			Columns: []string{document.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := du.mutation.OwnerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   document.OwnerTable,
+			Columns: []string{document.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if du.mutation.AllowedUsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   document.AllowedUsersTable,
+			Columns: document.AllowedUsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := du.mutation.RemovedAllowedUsersIDs(); len(nodes) > 0 && !du.mutation.AllowedUsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   document.AllowedUsersTable,
+			Columns: document.AllowedUsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := du.mutation.AllowedUsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   document.AllowedUsersTable,
+			Columns: document.AllowedUsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, du.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{document.Label}
@@ -88,9 +305,106 @@ type DocumentUpdateOne struct {
 	mutation *DocumentMutation
 }
 
+// AddEditorIDs adds the "editors" edge to the User entity by IDs.
+func (duo *DocumentUpdateOne) AddEditorIDs(ids ...int) *DocumentUpdateOne {
+	duo.mutation.AddEditorIDs(ids...)
+	return duo
+}
+
+// AddEditors adds the "editors" edges to the User entity.
+func (duo *DocumentUpdateOne) AddEditors(u ...*User) *DocumentUpdateOne {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return duo.AddEditorIDs(ids...)
+}
+
+// SetOwnerID sets the "owner" edge to the User entity by ID.
+func (duo *DocumentUpdateOne) SetOwnerID(id int) *DocumentUpdateOne {
+	duo.mutation.SetOwnerID(id)
+	return duo
+}
+
+// SetNillableOwnerID sets the "owner" edge to the User entity by ID if the given value is not nil.
+func (duo *DocumentUpdateOne) SetNillableOwnerID(id *int) *DocumentUpdateOne {
+	if id != nil {
+		duo = duo.SetOwnerID(*id)
+	}
+	return duo
+}
+
+// SetOwner sets the "owner" edge to the User entity.
+func (duo *DocumentUpdateOne) SetOwner(u *User) *DocumentUpdateOne {
+	return duo.SetOwnerID(u.ID)
+}
+
+// AddAllowedUserIDs adds the "allowed_users" edge to the User entity by IDs.
+func (duo *DocumentUpdateOne) AddAllowedUserIDs(ids ...int) *DocumentUpdateOne {
+	duo.mutation.AddAllowedUserIDs(ids...)
+	return duo
+}
+
+// AddAllowedUsers adds the "allowed_users" edges to the User entity.
+func (duo *DocumentUpdateOne) AddAllowedUsers(u ...*User) *DocumentUpdateOne {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return duo.AddAllowedUserIDs(ids...)
+}
+
 // Mutation returns the DocumentMutation object of the builder.
 func (duo *DocumentUpdateOne) Mutation() *DocumentMutation {
 	return duo.mutation
+}
+
+// ClearEditors clears all "editors" edges to the User entity.
+func (duo *DocumentUpdateOne) ClearEditors() *DocumentUpdateOne {
+	duo.mutation.ClearEditors()
+	return duo
+}
+
+// RemoveEditorIDs removes the "editors" edge to User entities by IDs.
+func (duo *DocumentUpdateOne) RemoveEditorIDs(ids ...int) *DocumentUpdateOne {
+	duo.mutation.RemoveEditorIDs(ids...)
+	return duo
+}
+
+// RemoveEditors removes "editors" edges to User entities.
+func (duo *DocumentUpdateOne) RemoveEditors(u ...*User) *DocumentUpdateOne {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return duo.RemoveEditorIDs(ids...)
+}
+
+// ClearOwner clears the "owner" edge to the User entity.
+func (duo *DocumentUpdateOne) ClearOwner() *DocumentUpdateOne {
+	duo.mutation.ClearOwner()
+	return duo
+}
+
+// ClearAllowedUsers clears all "allowed_users" edges to the User entity.
+func (duo *DocumentUpdateOne) ClearAllowedUsers() *DocumentUpdateOne {
+	duo.mutation.ClearAllowedUsers()
+	return duo
+}
+
+// RemoveAllowedUserIDs removes the "allowed_users" edge to User entities by IDs.
+func (duo *DocumentUpdateOne) RemoveAllowedUserIDs(ids ...int) *DocumentUpdateOne {
+	duo.mutation.RemoveAllowedUserIDs(ids...)
+	return duo
+}
+
+// RemoveAllowedUsers removes "allowed_users" edges to User entities.
+func (duo *DocumentUpdateOne) RemoveAllowedUsers(u ...*User) *DocumentUpdateOne {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return duo.RemoveAllowedUserIDs(ids...)
 }
 
 // Where appends a list predicates to the DocumentUpdate builder.
@@ -158,6 +472,125 @@ func (duo *DocumentUpdateOne) sqlSave(ctx context.Context) (_node *Document, err
 				ps[i](selector)
 			}
 		}
+	}
+	if duo.mutation.EditorsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   document.EditorsTable,
+			Columns: document.EditorsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := duo.mutation.RemovedEditorsIDs(); len(nodes) > 0 && !duo.mutation.EditorsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   document.EditorsTable,
+			Columns: document.EditorsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := duo.mutation.EditorsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   document.EditorsTable,
+			Columns: document.EditorsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if duo.mutation.OwnerCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   document.OwnerTable,
+			Columns: []string{document.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := duo.mutation.OwnerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   document.OwnerTable,
+			Columns: []string{document.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if duo.mutation.AllowedUsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   document.AllowedUsersTable,
+			Columns: document.AllowedUsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := duo.mutation.RemovedAllowedUsersIDs(); len(nodes) > 0 && !duo.mutation.AllowedUsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   document.AllowedUsersTable,
+			Columns: document.AllowedUsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := duo.mutation.AllowedUsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   document.AllowedUsersTable,
+			Columns: document.AllowedUsersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Document{config: duo.config}
 	_spec.Assign = _node.assignValues

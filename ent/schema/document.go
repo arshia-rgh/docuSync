@@ -1,6 +1,9 @@
 package schema
 
-import "entgo.io/ent"
+import (
+	"entgo.io/ent"
+	"entgo.io/ent/schema/edge"
+)
 
 // Document holds the schema definition for the Document entity.
 type Document struct {
@@ -14,5 +17,9 @@ func (Document) Fields() []ent.Field {
 
 // Edges of the Document.
 func (Document) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.To("editors", User.Type),
+		edge.From("owner", User.Type).Ref("owned_documents").Unique(),
+		edge.From("allowed_users", User.Type).Ref("allowed_documents"),
+	}
 }
