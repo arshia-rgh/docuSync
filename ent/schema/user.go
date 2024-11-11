@@ -3,6 +3,8 @@ package schema
 import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
+	"entgo.io/ent/schema/field"
+	"regexp"
 )
 
 // User holds the schema definition for the User entity.
@@ -12,7 +14,19 @@ type User struct {
 
 // Fields of the User.
 func (User) Fields() []ent.Field {
-	return nil
+	return []ent.Field{
+		field.String("name").
+			Optional(),
+		field.String("last_name").
+			Optional(),
+		field.String("username").
+			Unique(),
+		field.String("password").
+			Match(regexp.MustCompile("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$")),
+		field.String("email").
+			Unique().
+			Match(regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)),
+	}
 }
 
 // Edges of the User.
