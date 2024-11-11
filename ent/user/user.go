@@ -3,6 +3,8 @@
 package user
 
 import (
+	"time"
+
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 )
@@ -12,6 +14,20 @@ const (
 	Label = "user"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldName holds the string denoting the name field in the database.
+	FieldName = "name"
+	// FieldLastName holds the string denoting the last_name field in the database.
+	FieldLastName = "last_name"
+	// FieldUsername holds the string denoting the username field in the database.
+	FieldUsername = "username"
+	// FieldPassword holds the string denoting the password field in the database.
+	FieldPassword = "password"
+	// FieldEmail holds the string denoting the email field in the database.
+	FieldEmail = "email"
+	// FieldCreatedAt holds the string denoting the created_at field in the database.
+	FieldCreatedAt = "created_at"
+	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
+	FieldUpdatedAt = "updated_at"
 	// EdgeAllowedDocuments holds the string denoting the allowed_documents edge name in mutations.
 	EdgeAllowedDocuments = "allowed_documents"
 	// EdgeOwnedDocuments holds the string denoting the owned_documents edge name in mutations.
@@ -42,6 +58,13 @@ const (
 // Columns holds all SQL columns for user fields.
 var Columns = []string{
 	FieldID,
+	FieldName,
+	FieldLastName,
+	FieldUsername,
+	FieldPassword,
+	FieldEmail,
+	FieldCreatedAt,
+	FieldUpdatedAt,
 }
 
 var (
@@ -63,12 +86,60 @@ func ValidColumn(column string) bool {
 	return false
 }
 
+var (
+	// PasswordValidator is a validator for the "password" field. It is called by the builders before save.
+	PasswordValidator func(string) error
+	// EmailValidator is a validator for the "email" field. It is called by the builders before save.
+	EmailValidator func(string) error
+	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
+	DefaultCreatedAt time.Time
+	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
+	DefaultUpdatedAt time.Time
+	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
+	UpdateDefaultUpdatedAt func() time.Time
+)
+
 // OrderOption defines the ordering options for the User queries.
 type OrderOption func(*sql.Selector)
 
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByLastName orders the results by the last_name field.
+func ByLastName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastName, opts...).ToFunc()
+}
+
+// ByUsername orders the results by the username field.
+func ByUsername(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUsername, opts...).ToFunc()
+}
+
+// ByPassword orders the results by the password field.
+func ByPassword(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPassword, opts...).ToFunc()
+}
+
+// ByEmail orders the results by the email field.
+func ByEmail(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEmail, opts...).ToFunc()
+}
+
+// ByCreatedAt orders the results by the created_at field.
+func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByUpdatedAt orders the results by the updated_at field.
+func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
 // ByAllowedDocumentsCount orders the results by allowed_documents count.
