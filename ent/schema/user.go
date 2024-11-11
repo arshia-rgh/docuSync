@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"regexp"
+	"time"
 )
 
 // User holds the schema definition for the User entity.
@@ -26,6 +27,11 @@ func (User) Fields() []ent.Field {
 		field.String("email").
 			Unique().
 			Match(regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)),
+		field.Time("created_at").
+			Default(time.Now()),
+		field.Time("updated_at").
+			Default(time.Now()).
+			UpdateDefault(time.Now()),
 	}
 }
 
