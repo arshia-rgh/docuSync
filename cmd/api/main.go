@@ -22,7 +22,11 @@ func main() {
 		log.Fatalf("failed creating schema resources: %v", err)
 	}
 	log.Println("migration done")
+
+	app := Config{client: client}
+
 	server := fiber.New()
+	app.registerRouter(server)
 
 	err := server.Listen(fmt.Sprintf(":%v", webPort))
 	if err != nil {
