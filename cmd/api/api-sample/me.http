@@ -1,0 +1,2 @@
+GET localhost:8080/api/protected/me
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzE1MzcwODcsInN1YiI6MTgzfQ.9EuiJxtNPKO28dOf1g-2FUL3LDAgonBfFdfe2JVpQ1g
