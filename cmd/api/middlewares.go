@@ -30,7 +30,7 @@ func (app *Config) authenticate(c *fiber.Ctx) error {
 
 	if len(token) == 0 {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": "no credentials provided",
+			"message": "no token provided",
 		})
 	}
 
@@ -40,7 +40,7 @@ func (app *Config) authenticate(c *fiber.Ctx) error {
 		log.Println(err)
 		if errors.Is(err, utils.ErrInvalidToken) {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"message": "wrong credentials",
+				"message": "wrong token",
 			})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

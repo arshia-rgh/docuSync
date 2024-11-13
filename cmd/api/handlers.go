@@ -66,14 +66,14 @@ func (app *Config) loginUser(c *fiber.Ctx) error {
 	if err != nil {
 		log.Println(err.Error())
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "failed to find user with given credentials",
+			"message": "failed to find user with given username",
 		})
 	}
 
 	ok := utils.VerifyPassword(user.Password, dbUser.Password)
 	if !ok {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": "wrong credentials",
+			"message": "wrong password",
 		})
 	}
 
