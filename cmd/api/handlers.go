@@ -119,3 +119,7 @@ func (app *Config) me(c *fiber.Ctx) error {
 	}
 	return c.Status(fiber.StatusOK).JSON(user)
 }
+
+func (app *Config) updateUser(c *fiber.Ctx) error {
+
+}

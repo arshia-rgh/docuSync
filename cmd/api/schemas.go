@@ -16,3 +16,10 @@ type UserLogin struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
+
+type UserUpdate struct {
+	Name     string `json:"name,omitempty"`
+	LastName string `json:"last_name,omitempty"`
+	Username string `json:"username,omitempty"`
+	Email    string `json:"email,omitempty"`
+}
