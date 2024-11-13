@@ -32,15 +32,19 @@ func main() {
 	defer zapLogger.Sync()
 	logger_ := logger.New(zapLogger)
 
+	// main app initialization
 	app := Config{client: client, logger: logger_}
 
+	// fiber server initialization
 	server := fiber.New()
 	server.Use(app.requestLogger)
 
+	// protected apis ( by auth )
 	protectedAPIS := server.Group("/api/protected")
 	protectedAPIS.Use(app.authenticate)
 	app.registerProtectedRouter(protectedAPIS)
 
+	// public apis
 	publicAPIS := server.Group("/api")
 	app.registerPublicRouter(publicAPIS)
 
