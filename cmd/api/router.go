@@ -9,4 +9,5 @@ func (app *Config) registerPublicRouter(server fiber.Router) {
 
 func (app *Config) registerProtectedRouter(server fiber.Router) {
 	server.Get("/me", app.me)
+	server.Put("/me/update", app.updateUser)
 }
