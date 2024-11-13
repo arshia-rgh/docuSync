@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"docuSync/ent"
+	"docuSync/logger"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
 	"log"
 )
 
@@ -12,6 +14,7 @@ const webPort = 8080
 
 type Config struct {
 	client *ent.Client
+	logger *logger.Logger
 }
 
 func main() {
@@ -23,7 +26,11 @@ func main() {
 	}
 	log.Println("migration done")
 
-	app := Config{client: client}
+	zapLogger, _ := zap.NewProduction()
+	defer zapLogger.Sync()
+	logger_ := logger.New(zapLogger)
+
+	app := Config{client: client, logger: logger_}
 
 	server := fiber.New()
 	app.registerRouter(server)
