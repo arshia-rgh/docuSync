@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	UserDB "docuSync/ent/user"
 	"docuSync/utils"
 	"github.com/gofiber/fiber/v2"
 	"log"
@@ -48,7 +49,6 @@ func (app *Config) registerUser(c *fiber.Ctx) error {
 // loginUser uses the UserLogin schema
 func (app *Config) loginUser(c *fiber.Ctx) error {
 	var user UserLogin
-
 	if err := c.BodyParser(user); err != nil {
 		log.Println(err.Error())
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -56,7 +56,28 @@ func (app *Config) loginUser(c *fiber.Ctx) error {
 			"error":   err.Error(),
 		})
 	}
-	token, err := utils.GenerateToken(user.Username)
+
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+	dbUser, err := app.client.User.
+		Query().
+		Where(UserDB.UsernameEQ(user.Username)).
+		Only(ctx)
+	if err != nil {
+		log.Println(err.Error())
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "failed to find user with given credentials",
+		})
+	}
+
+	ok := utils.VerifyPassword(user.Password, dbUser.Password)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "wrong credentials",
+		})
+	}
+
+	token, err := utils.GenerateToken(dbUser.ID)
 	if err != nil {
 		log.Println(err.Error())
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
