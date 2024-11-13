@@ -38,11 +38,21 @@ func (app *Config) registerUser(c *fiber.Ctx) error {
 		Save(ctx)
 	if err != nil {
 		log.Println(err.Error())
+		if ent.IsValidationError(err) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "validation error",
+				"error":   err.Error(),
+			})
+		}
+		if ent.IsConstraintError(err) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "username or email already exists",
+			})
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "failed to create user",
 		})
 	}
-
 	return c.Status(fiber.StatusOK).JSON(newUser)
 
 }

@@ -23,7 +23,7 @@ func (User) Fields() []ent.Field {
 		field.String("username").
 			Unique(),
 		field.String("password").
-			Match(regexp.MustCompile(`^[A-Za-z\d]{8,}$`)),
+			Match(regexp.MustCompile(`^[A-Za-z\d@$!%*?&]{8,}$`)),
 		field.String("email").
 			Unique().
 			Match(regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)),
