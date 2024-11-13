@@ -11,3 +11,8 @@ type UserRegister struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 }
+
+type UserLogin struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}

@@ -44,3 +44,7 @@ func (app *Config) registerUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(newUser)
 
 }
+
+func (app *Config) loginUser(c *fiber.Ctx) error {
+
+}
