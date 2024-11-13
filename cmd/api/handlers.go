@@ -89,3 +89,7 @@ func (app *Config) loginUser(c *fiber.Ctx) error {
 		"code": token,
 	})
 }
+
+func (app *Config) me(c *fiber.Ctx) error {
+
+}
