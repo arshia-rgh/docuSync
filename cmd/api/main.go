@@ -36,7 +36,13 @@ func main() {
 
 	server := fiber.New()
 	server.Use(app.requestLogger)
-	app.registerRouter(server)
+
+	protectedAPIS := server.Group("/api/protected")
+	protectedAPIS.Use(app.authenticate)
+	app.registerProtectedRouter(protectedAPIS)
+
+	publicAPIS := server.Group("/api")
+	app.registerPublicRouter(publicAPIS)
 
 	err := server.Listen(fmt.Sprintf(":%v", webPort))
 	if err != nil {

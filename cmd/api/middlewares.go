@@ -20,3 +20,7 @@ func (app *Config) requestLogger(c *fiber.Ctx) error {
 
 	return err
 }
+
+func (app *Config) authenticate(c *fiber.Ctx) error {
+
+}
