@@ -59,7 +59,7 @@ func (app *Config) registerUser(c *fiber.Ctx) error {
 
 // loginUser uses the UserLogin schema
 func (app *Config) loginUser(c *fiber.Ctx) error {
-	var user UserLogin
+	user := new(UserLogin)
 	if err := c.BodyParser(user); err != nil {
 		log.Println(err.Error())
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -131,7 +131,7 @@ func (app *Config) me(c *fiber.Ctx) error {
 }
 
 func (app *Config) updateUser(c *fiber.Ctx) error {
-	var user UserUpdate
+	user := new(UserUpdate)
 	if err := c.BodyParser(user); err != nil {
 		log.Println(err.Error())
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
