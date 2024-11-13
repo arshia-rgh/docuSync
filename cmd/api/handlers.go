@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"docuSync/utils"
 	"github.com/gofiber/fiber/v2"
 	"log"
 	"time"
@@ -24,12 +25,13 @@ func (app *Config) registerUser(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
+	hashPass, _ := utils.HashPassword(user.Password)
 	newUser, err := app.client.User.
 		Create().
 		SetName(user.Name).
 		SetLastName(user.LastName).
 		SetUsername(user.Username).
-		SetPassword(user.Password).
+		SetPassword(hashPass).
 		SetEmail(user.Email).
 		Save(ctx)
 	if err != nil {
