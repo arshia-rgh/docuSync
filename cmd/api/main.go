@@ -18,6 +18,7 @@ type Config struct {
 }
 
 func main() {
+	// DB and ent initialization
 	client := initDB()
 	defer client.Close()
 
@@ -26,6 +27,7 @@ func main() {
 	}
 	log.Println("migration done")
 
+	// Zap logger initialization
 	zapLogger, _ := zap.NewProduction()
 	defer zapLogger.Sync()
 	logger_ := logger.New(zapLogger)
