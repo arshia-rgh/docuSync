@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/gofiber/fiber/v2"
 	"log"
-	"strconv"
 	"time"
 )
 
@@ -26,7 +25,7 @@ func (app *Config) requestLogger(c *fiber.Ctx) error {
 }
 
 func (app *Config) authenticate(c *fiber.Ctx) error {
-	token := c.Get("authentication")
+	token := c.Get("authorization")
 
 	if len(token) == 0 {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -49,7 +48,7 @@ func (app *Config) authenticate(c *fiber.Ctx) error {
 
 	}
 
-	c.Set("user", strconv.Itoa(userID))
+	c.Locals("user", userID)
 	return c.Next()
 
 }
