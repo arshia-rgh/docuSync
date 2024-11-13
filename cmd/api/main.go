@@ -28,7 +28,7 @@ func main() {
 	log.Println("migration done")
 
 	// Zap logger initialization
-	zapLogger, _ := zap.NewProduction()
+	zapLogger := zap.NewExample()
 	defer zapLogger.Sync()
 	logger_ := logger.New(zapLogger)
 

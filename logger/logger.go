@@ -11,27 +11,26 @@ func New(logger *zap.Logger) *Logger {
 }
 
 func (l *Logger) Log(level string, msg string, data map[string]any) {
+	kvPairs := mapToKV(data)
+
 	switch level {
 	case "info":
-		l.infoLog(msg, data)
+		l.sugar.Infow(msg, kvPairs...)
 	case "warning":
-		l.warnLog(msg, data)
+		l.sugar.Warnw(msg, kvPairs...)
 	case "error":
-		l.errorLog(msg, data)
+		l.sugar.Errorw(msg, kvPairs...)
 	default:
-		l.infoLog(msg, data)
+		l.sugar.Infow(msg, kvPairs...)
 
 	}
 }
 
-func (l *Logger) infoLog(msg string, data map[string]any) {
-	l.sugar.Infow(msg, data)
-}
+func mapToKV(data map[string]any) []any {
+	var kvPairs []any
+	for k, v := range data {
+		kvPairs = append(kvPairs, k, v)
+	}
 
-func (l *Logger) warnLog(msg string, data map[string]any) {
-	l.sugar.Warnw(msg, data)
-}
-
-func (l *Logger) errorLog(msg string, data map[string]any) {
-	l.sugar.Errorw(msg, data)
+	return kvPairs
 }
