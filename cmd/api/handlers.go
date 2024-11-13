@@ -144,14 +144,21 @@ func (app *Config) updateUser(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	dbUser, err := app.client.User.
-		UpdateOneID(userID).
-		SetName(user.Name).
-		SetLastName(user.LastName).
-		SetUsername(user.Username).
-		SetEmail(user.Email).
-		Save(ctx)
+	update := app.client.User.UpdateOneID(userID)
+	if user.Name != "" {
+		update.SetName(user.Name)
+	}
+	if user.LastName != "" {
+		update.SetLastName(user.LastName)
+	}
+	if user.Username != "" {
+		update.SetUsername(user.Username)
+	}
+	if user.Email != "" {
+		update.SetEmail(user.Email)
+	}
 
+	dbUser, err := update.Save(ctx)
 	if err != nil {
 		log.Println(err.Error())
 		if ent.IsNotFound(err) {
