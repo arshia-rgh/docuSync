@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"docuSync/ent"
 	UserDB "docuSync/ent/user"
 	"docuSync/utils"
 	"github.com/gofiber/fiber/v2"
@@ -65,9 +66,15 @@ func (app *Config) loginUser(c *fiber.Ctx) error {
 		Only(ctx)
 	if err != nil {
 		log.Println(err.Error())
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "failed to find user with given username",
+		if ent.IsNotFound(err) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"message": "failed to find user with given username",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "internal server error",
 		})
+
 	}
 
 	ok := utils.VerifyPassword(user.Password, dbUser.Password)
@@ -91,5 +98,24 @@ func (app *Config) loginUser(c *fiber.Ctx) error {
 }
 
 func (app *Config) me(c *fiber.Ctx) error {
+	userID := c.Locals("user").(int)
 
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+	user, err := app.client.User.
+		Get(ctx, userID)
+
+	if err != nil {
+		log.Println(err.Error())
+		if ent.IsNotFound(err) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"message": "no user found",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "internal server error",
+		})
+
+	}
+	return c.Status(fiber.StatusOK).JSON(user)
 }
