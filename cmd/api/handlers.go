@@ -121,5 +121,38 @@ func (app *Config) me(c *fiber.Ctx) error {
 }
 
 func (app *Config) updateUser(c *fiber.Ctx) error {
+	var user UserUpdate
+	if err := c.BodyParser(user); err != nil {
+		log.Println(err.Error())
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "invalid data ",
+			"error":   err.Error(),
+		})
+	}
 
+	userID := c.Locals("user").(int)
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	dbUser, err := app.client.User.
+		UpdateOneID(userID).
+		SetName(user.Name).
+		SetLastName(user.LastName).
+		SetUsername(user.Username).
+		SetEmail(user.Email).
+		Save(ctx)
+
+	if err != nil {
+		log.Println(err.Error())
+		if ent.IsNotFound(err) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"message": "no user found",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "internal server error",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(dbUser)
 }
