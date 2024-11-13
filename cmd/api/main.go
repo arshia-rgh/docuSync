@@ -35,6 +35,7 @@ func main() {
 	app := Config{client: client, logger: logger_}
 
 	server := fiber.New()
+	server.Use(app.requestLogger)
 	app.registerRouter(server)
 
 	err := server.Listen(fmt.Sprintf(":%v", webPort))
