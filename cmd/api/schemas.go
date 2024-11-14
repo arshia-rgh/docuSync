@@ -23,3 +23,9 @@ type UserUpdate struct {
 	Username string `json:"username,omitempty"`
 	Email    string `json:"email,omitempty"`
 }
+
+type ChangePassword struct {
+	OldPassword     string `json:"old_password"`
+	NewPassword     string `json:"new_password"`
+	ConfirmPassword string `json:"confirm_password"`
+}

@@ -175,3 +175,7 @@ func (app *Config) updateUser(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(dbUser)
 }
+
+func (app *Config) changePassword(c *fiber.Ctx) error {
+
+}
