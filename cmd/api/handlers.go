@@ -288,3 +288,7 @@ func (app *Config) createDocument(c *fiber.Ctx) error {
 	}
 	return c.Status(fiber.StatusOK).JSON(dbDocument)
 }
+
+func (app *Config) updateDocument(c *fiber.Ctx) error {
+
+}
