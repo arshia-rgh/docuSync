@@ -21,7 +21,6 @@ func (Document) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("title").
 			Unique().
-			Default("").
 			Optional(),
 	}
 }

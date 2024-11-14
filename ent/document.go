@@ -14,9 +14,11 @@ import (
 
 // Document is the model entity for the Document schema.
 type Document struct {
-	config
+	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// Title holds the value of the "title" field.
+	Title string `json:"title,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the DocumentQuery when eager-loading is set.
 	Edges                DocumentEdges `json:"edges"`
@@ -73,6 +75,8 @@ func (*Document) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case document.FieldID:
 			values[i] = new(sql.NullInt64)
+		case document.FieldTitle:
+			values[i] = new(sql.NullString)
 		case document.ForeignKeys[0]: // user_owned_documents
 			values[i] = new(sql.NullInt64)
 		default:
@@ -96,6 +100,12 @@ func (d *Document) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			d.ID = int(value.Int64)
+		case document.FieldTitle:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field title", values[i])
+			} else if value.Valid {
+				d.Title = value.String
+			}
 		case document.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field user_owned_documents", value)
@@ -153,7 +163,9 @@ func (d *Document) Unwrap() *Document {
 func (d *Document) String() string {
 	var builder strings.Builder
 	builder.WriteString("Document(")
-	builder.WriteString(fmt.Sprintf("id=%v", d.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", d.ID))
+	builder.WriteString("title=")
+	builder.WriteString(d.Title)
 	builder.WriteByte(')')
 	return builder.String()
 }

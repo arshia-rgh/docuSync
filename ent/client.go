@@ -366,7 +366,8 @@ func (c *DocumentClient) QueryAllowedUsers(d *Document) *UserQuery {
 
 // Hooks returns the client hooks.
 func (c *DocumentClient) Hooks() []Hook {
-	return c.hooks.Document
+	hooks := c.hooks.Document
+	return append(hooks[:len(hooks):len(hooks)], document.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.

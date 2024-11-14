@@ -28,6 +28,26 @@ func (du *DocumentUpdate) Where(ps ...predicate.Document) *DocumentUpdate {
 	return du
 }
 
+// SetTitle sets the "title" field.
+func (du *DocumentUpdate) SetTitle(s string) *DocumentUpdate {
+	du.mutation.SetTitle(s)
+	return du
+}
+
+// SetNillableTitle sets the "title" field if the given value is not nil.
+func (du *DocumentUpdate) SetNillableTitle(s *string) *DocumentUpdate {
+	if s != nil {
+		du.SetTitle(*s)
+	}
+	return du
+}
+
+// ClearTitle clears the value of the "title" field.
+func (du *DocumentUpdate) ClearTitle() *DocumentUpdate {
+	du.mutation.ClearTitle()
+	return du
+}
+
 // AddEditorIDs adds the "editors" edge to the User entity by IDs.
 func (du *DocumentUpdate) AddEditorIDs(ids ...int) *DocumentUpdate {
 	du.mutation.AddEditorIDs(ids...)
@@ -166,6 +186,12 @@ func (du *DocumentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := du.mutation.Title(); ok {
+		_spec.SetField(document.FieldTitle, field.TypeString, value)
+	}
+	if du.mutation.TitleCleared() {
+		_spec.ClearField(document.FieldTitle, field.TypeString)
+	}
 	if du.mutation.EditorsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -303,6 +329,26 @@ type DocumentUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *DocumentMutation
+}
+
+// SetTitle sets the "title" field.
+func (duo *DocumentUpdateOne) SetTitle(s string) *DocumentUpdateOne {
+	duo.mutation.SetTitle(s)
+	return duo
+}
+
+// SetNillableTitle sets the "title" field if the given value is not nil.
+func (duo *DocumentUpdateOne) SetNillableTitle(s *string) *DocumentUpdateOne {
+	if s != nil {
+		duo.SetTitle(*s)
+	}
+	return duo
+}
+
+// ClearTitle clears the value of the "title" field.
+func (duo *DocumentUpdateOne) ClearTitle() *DocumentUpdateOne {
+	duo.mutation.ClearTitle()
+	return duo
 }
 
 // AddEditorIDs adds the "editors" edge to the User entity by IDs.
@@ -472,6 +518,12 @@ func (duo *DocumentUpdateOne) sqlSave(ctx context.Context) (_node *Document, err
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := duo.mutation.Title(); ok {
+		_spec.SetField(document.FieldTitle, field.TypeString, value)
+	}
+	if duo.mutation.TitleCleared() {
+		_spec.ClearField(document.FieldTitle, field.TypeString)
 	}
 	if duo.mutation.EditorsCleared() {
 		edge := &sqlgraph.EdgeSpec{

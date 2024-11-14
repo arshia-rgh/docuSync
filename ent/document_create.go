@@ -19,6 +19,20 @@ type DocumentCreate struct {
 	hooks    []Hook
 }
 
+// SetTitle sets the "title" field.
+func (dc *DocumentCreate) SetTitle(s string) *DocumentCreate {
+	dc.mutation.SetTitle(s)
+	return dc
+}
+
+// SetNillableTitle sets the "title" field if the given value is not nil.
+func (dc *DocumentCreate) SetNillableTitle(s *string) *DocumentCreate {
+	if s != nil {
+		dc.SetTitle(*s)
+	}
+	return dc
+}
+
 // AddEditorIDs adds the "editors" edge to the User entity by IDs.
 func (dc *DocumentCreate) AddEditorIDs(ids ...int) *DocumentCreate {
 	dc.mutation.AddEditorIDs(ids...)
@@ -128,6 +142,10 @@ func (dc *DocumentCreate) createSpec() (*Document, *sqlgraph.CreateSpec) {
 		_node = &Document{config: dc.config}
 		_spec = sqlgraph.NewCreateSpec(document.Table, sqlgraph.NewFieldSpec(document.FieldID, field.TypeInt))
 	)
+	if value, ok := dc.mutation.Title(); ok {
+		_spec.SetField(document.FieldTitle, field.TypeString, value)
+		_node.Title = value
+	}
 	if nodes := dc.mutation.EditorsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
