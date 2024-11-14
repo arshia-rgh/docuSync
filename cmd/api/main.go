@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"docuSync/ent"
+	_ "docuSync/ent/runtime"
 	"docuSync/logger"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
