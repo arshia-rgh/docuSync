@@ -1,0 +1,7 @@
+POST localhost:8080/api/protected/create-document
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzE2MDkwNzksInN1YiI6MTgzfQ.hRrWVnoAtIJc60eZ1M6Az4y7aas3mXkF_9P3b38rg-E
+content-type: application/json
+
+{
+  "title": "test title"
+}
