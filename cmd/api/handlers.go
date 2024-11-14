@@ -253,3 +253,16 @@ func (app *Config) changePassword(c *fiber.Ctx) error {
 		"detail":  dbUser,
 	})
 }
+
+// createDocument uses CreateDocument schema and protected by auth
+func (app *Config) createDocument(c *fiber.Ctx) error {
+	document := new(CreateDocument)
+
+	if err := c.BodyParser(document); err != nil {
+		log.Println(err.Error())
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "invalid data",
+			"error":   err.Error(),
+		})
+	}
+}

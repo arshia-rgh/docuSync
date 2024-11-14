@@ -29,3 +29,7 @@ type ChangePassword struct {
 	NewPassword     string `json:"new_password"`
 	ConfirmPassword string `json:"confirm_password"`
 }
+
+type CreateDocument struct {
+	Title string `json:"title,omitempty"`
+}
