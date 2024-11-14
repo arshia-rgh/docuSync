@@ -286,5 +286,5 @@ func (app *Config) createDocument(c *fiber.Ctx) error {
 			"message": "internal server error",
 		})
 	}
-	return c.Status(fiber.StatusOK).JSON(document)
+	return c.Status(fiber.StatusOK).JSON(dbDocument)
 }
