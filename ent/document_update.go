@@ -9,6 +9,7 @@ import (
 	"docuSync/ent/user"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -45,6 +46,46 @@ func (du *DocumentUpdate) SetNillableTitle(s *string) *DocumentUpdate {
 // ClearTitle clears the value of the "title" field.
 func (du *DocumentUpdate) ClearTitle() *DocumentUpdate {
 	du.mutation.ClearTitle()
+	return du
+}
+
+// SetText sets the "text" field.
+func (du *DocumentUpdate) SetText(s string) *DocumentUpdate {
+	du.mutation.SetText(s)
+	return du
+}
+
+// SetNillableText sets the "text" field if the given value is not nil.
+func (du *DocumentUpdate) SetNillableText(s *string) *DocumentUpdate {
+	if s != nil {
+		du.SetText(*s)
+	}
+	return du
+}
+
+// ClearText clears the value of the "text" field.
+func (du *DocumentUpdate) ClearText() *DocumentUpdate {
+	du.mutation.ClearText()
+	return du
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (du *DocumentUpdate) SetCreatedAt(t time.Time) *DocumentUpdate {
+	du.mutation.SetCreatedAt(t)
+	return du
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (du *DocumentUpdate) SetNillableCreatedAt(t *time.Time) *DocumentUpdate {
+	if t != nil {
+		du.SetCreatedAt(*t)
+	}
+	return du
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (du *DocumentUpdate) SetUpdatedAt(t time.Time) *DocumentUpdate {
+	du.mutation.SetUpdatedAt(t)
 	return du
 }
 
@@ -152,6 +193,9 @@ func (du *DocumentUpdate) RemoveAllowedUsers(u ...*User) *DocumentUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (du *DocumentUpdate) Save(ctx context.Context) (int, error) {
+	if err := du.defaults(); err != nil {
+		return 0, err
+	}
 	return withHooks(ctx, du.sqlSave, du.mutation, du.hooks)
 }
 
@@ -177,6 +221,18 @@ func (du *DocumentUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (du *DocumentUpdate) defaults() error {
+	if _, ok := du.mutation.UpdatedAt(); !ok {
+		if document.UpdateDefaultUpdatedAt == nil {
+			return fmt.Errorf("ent: uninitialized document.UpdateDefaultUpdatedAt (forgotten import ent/runtime?)")
+		}
+		v := document.UpdateDefaultUpdatedAt()
+		du.mutation.SetUpdatedAt(v)
+	}
+	return nil
+}
+
 func (du *DocumentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	_spec := sqlgraph.NewUpdateSpec(document.Table, document.Columns, sqlgraph.NewFieldSpec(document.FieldID, field.TypeInt))
 	if ps := du.mutation.predicates; len(ps) > 0 {
@@ -191,6 +247,18 @@ func (du *DocumentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if du.mutation.TitleCleared() {
 		_spec.ClearField(document.FieldTitle, field.TypeString)
+	}
+	if value, ok := du.mutation.Text(); ok {
+		_spec.SetField(document.FieldText, field.TypeString, value)
+	}
+	if du.mutation.TextCleared() {
+		_spec.ClearField(document.FieldText, field.TypeString)
+	}
+	if value, ok := du.mutation.CreatedAt(); ok {
+		_spec.SetField(document.FieldCreatedAt, field.TypeTime, value)
+	}
+	if value, ok := du.mutation.UpdatedAt(); ok {
+		_spec.SetField(document.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if du.mutation.EditorsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -351,6 +419,46 @@ func (duo *DocumentUpdateOne) ClearTitle() *DocumentUpdateOne {
 	return duo
 }
 
+// SetText sets the "text" field.
+func (duo *DocumentUpdateOne) SetText(s string) *DocumentUpdateOne {
+	duo.mutation.SetText(s)
+	return duo
+}
+
+// SetNillableText sets the "text" field if the given value is not nil.
+func (duo *DocumentUpdateOne) SetNillableText(s *string) *DocumentUpdateOne {
+	if s != nil {
+		duo.SetText(*s)
+	}
+	return duo
+}
+
+// ClearText clears the value of the "text" field.
+func (duo *DocumentUpdateOne) ClearText() *DocumentUpdateOne {
+	duo.mutation.ClearText()
+	return duo
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (duo *DocumentUpdateOne) SetCreatedAt(t time.Time) *DocumentUpdateOne {
+	duo.mutation.SetCreatedAt(t)
+	return duo
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (duo *DocumentUpdateOne) SetNillableCreatedAt(t *time.Time) *DocumentUpdateOne {
+	if t != nil {
+		duo.SetCreatedAt(*t)
+	}
+	return duo
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (duo *DocumentUpdateOne) SetUpdatedAt(t time.Time) *DocumentUpdateOne {
+	duo.mutation.SetUpdatedAt(t)
+	return duo
+}
+
 // AddEditorIDs adds the "editors" edge to the User entity by IDs.
 func (duo *DocumentUpdateOne) AddEditorIDs(ids ...int) *DocumentUpdateOne {
 	duo.mutation.AddEditorIDs(ids...)
@@ -468,6 +576,9 @@ func (duo *DocumentUpdateOne) Select(field string, fields ...string) *DocumentUp
 
 // Save executes the query and returns the updated Document entity.
 func (duo *DocumentUpdateOne) Save(ctx context.Context) (*Document, error) {
+	if err := duo.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks(ctx, duo.sqlSave, duo.mutation, duo.hooks)
 }
 
@@ -491,6 +602,18 @@ func (duo *DocumentUpdateOne) ExecX(ctx context.Context) {
 	if err := duo.Exec(ctx); err != nil {
 		panic(err)
 	}
+}
+
+// defaults sets the default values of the builder before save.
+func (duo *DocumentUpdateOne) defaults() error {
+	if _, ok := duo.mutation.UpdatedAt(); !ok {
+		if document.UpdateDefaultUpdatedAt == nil {
+			return fmt.Errorf("ent: uninitialized document.UpdateDefaultUpdatedAt (forgotten import ent/runtime?)")
+		}
+		v := document.UpdateDefaultUpdatedAt()
+		duo.mutation.SetUpdatedAt(v)
+	}
+	return nil
 }
 
 func (duo *DocumentUpdateOne) sqlSave(ctx context.Context) (_node *Document, err error) {
@@ -524,6 +647,18 @@ func (duo *DocumentUpdateOne) sqlSave(ctx context.Context) (_node *Document, err
 	}
 	if duo.mutation.TitleCleared() {
 		_spec.ClearField(document.FieldTitle, field.TypeString)
+	}
+	if value, ok := duo.mutation.Text(); ok {
+		_spec.SetField(document.FieldText, field.TypeString, value)
+	}
+	if duo.mutation.TextCleared() {
+		_spec.ClearField(document.FieldText, field.TypeString)
+	}
+	if value, ok := duo.mutation.CreatedAt(); ok {
+		_spec.SetField(document.FieldCreatedAt, field.TypeTime, value)
+	}
+	if value, ok := duo.mutation.UpdatedAt(); ok {
+		_spec.SetField(document.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if duo.mutation.EditorsCleared() {
 		edge := &sqlgraph.EdgeSpec{

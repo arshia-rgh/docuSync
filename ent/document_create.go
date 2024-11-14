@@ -6,7 +6,9 @@ import (
 	"context"
 	"docuSync/ent/document"
 	"docuSync/ent/user"
+	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -29,6 +31,48 @@ func (dc *DocumentCreate) SetTitle(s string) *DocumentCreate {
 func (dc *DocumentCreate) SetNillableTitle(s *string) *DocumentCreate {
 	if s != nil {
 		dc.SetTitle(*s)
+	}
+	return dc
+}
+
+// SetText sets the "text" field.
+func (dc *DocumentCreate) SetText(s string) *DocumentCreate {
+	dc.mutation.SetText(s)
+	return dc
+}
+
+// SetNillableText sets the "text" field if the given value is not nil.
+func (dc *DocumentCreate) SetNillableText(s *string) *DocumentCreate {
+	if s != nil {
+		dc.SetText(*s)
+	}
+	return dc
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (dc *DocumentCreate) SetCreatedAt(t time.Time) *DocumentCreate {
+	dc.mutation.SetCreatedAt(t)
+	return dc
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (dc *DocumentCreate) SetNillableCreatedAt(t *time.Time) *DocumentCreate {
+	if t != nil {
+		dc.SetCreatedAt(*t)
+	}
+	return dc
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (dc *DocumentCreate) SetUpdatedAt(t time.Time) *DocumentCreate {
+	dc.mutation.SetUpdatedAt(t)
+	return dc
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (dc *DocumentCreate) SetNillableUpdatedAt(t *time.Time) *DocumentCreate {
+	if t != nil {
+		dc.SetUpdatedAt(*t)
 	}
 	return dc
 }
@@ -89,6 +133,9 @@ func (dc *DocumentCreate) Mutation() *DocumentMutation {
 
 // Save creates the Document in the database.
 func (dc *DocumentCreate) Save(ctx context.Context) (*Document, error) {
+	if err := dc.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks(ctx, dc.sqlSave, dc.mutation, dc.hooks)
 }
 
@@ -114,8 +161,27 @@ func (dc *DocumentCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (dc *DocumentCreate) defaults() error {
+	if _, ok := dc.mutation.CreatedAt(); !ok {
+		v := document.DefaultCreatedAt
+		dc.mutation.SetCreatedAt(v)
+	}
+	if _, ok := dc.mutation.UpdatedAt(); !ok {
+		v := document.DefaultUpdatedAt
+		dc.mutation.SetUpdatedAt(v)
+	}
+	return nil
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (dc *DocumentCreate) check() error {
+	if _, ok := dc.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Document.created_at"`)}
+	}
+	if _, ok := dc.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Document.updated_at"`)}
+	}
 	return nil
 }
 
@@ -145,6 +211,18 @@ func (dc *DocumentCreate) createSpec() (*Document, *sqlgraph.CreateSpec) {
 	if value, ok := dc.mutation.Title(); ok {
 		_spec.SetField(document.FieldTitle, field.TypeString, value)
 		_node.Title = value
+	}
+	if value, ok := dc.mutation.Text(); ok {
+		_spec.SetField(document.FieldText, field.TypeString, value)
+		_node.Text = value
+	}
+	if value, ok := dc.mutation.CreatedAt(); ok {
+		_spec.SetField(document.FieldCreatedAt, field.TypeTime, value)
+		_node.CreatedAt = value
+	}
+	if value, ok := dc.mutation.UpdatedAt(); ok {
+		_spec.SetField(document.FieldUpdatedAt, field.TypeTime, value)
+		_node.UpdatedAt = value
 	}
 	if nodes := dc.mutation.EditorsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -216,6 +294,7 @@ func (dcb *DocumentCreateBulk) Save(ctx context.Context) ([]*Document, error) {
 	for i := range dcb.builders {
 		func(i int, root context.Context) {
 			builder := dcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*DocumentMutation)
 				if !ok {

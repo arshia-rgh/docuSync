@@ -4,11 +4,11 @@ import (
 	"context"
 	gen "docuSync/ent"
 	"docuSync/ent/hook"
-	_ "docuSync/ent/runtime"
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"fmt"
+	"time"
 )
 
 // Document holds the schema definition for the Document entity.
@@ -22,6 +22,15 @@ func (Document) Fields() []ent.Field {
 		field.String("title").
 			Unique().
 			Optional(),
+		field.Text("text").
+			Optional(),
+		field.Time("created_at").
+			Default(time.Now()),
+		field.Time("updated_at").
+			Default(time.Now()).
+			UpdateDefault(func() time.Time {
+				return time.Now()
+			}),
 	}
 }
 

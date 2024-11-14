@@ -7,6 +7,7 @@ import (
 	"docuSync/ent/user"
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
@@ -19,6 +20,12 @@ type Document struct {
 	ID int `json:"id,omitempty"`
 	// Title holds the value of the "title" field.
 	Title string `json:"title,omitempty"`
+	// Text holds the value of the "text" field.
+	Text string `json:"text,omitempty"`
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// UpdatedAt holds the value of the "updated_at" field.
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the DocumentQuery when eager-loading is set.
 	Edges                DocumentEdges `json:"edges"`
@@ -75,8 +82,10 @@ func (*Document) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case document.FieldID:
 			values[i] = new(sql.NullInt64)
-		case document.FieldTitle:
+		case document.FieldTitle, document.FieldText:
 			values[i] = new(sql.NullString)
+		case document.FieldCreatedAt, document.FieldUpdatedAt:
+			values[i] = new(sql.NullTime)
 		case document.ForeignKeys[0]: // user_owned_documents
 			values[i] = new(sql.NullInt64)
 		default:
@@ -105,6 +114,24 @@ func (d *Document) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field title", values[i])
 			} else if value.Valid {
 				d.Title = value.String
+			}
+		case document.FieldText:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field text", values[i])
+			} else if value.Valid {
+				d.Text = value.String
+			}
+		case document.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
+			} else if value.Valid {
+				d.CreatedAt = value.Time
+			}
+		case document.FieldUpdatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
+			} else if value.Valid {
+				d.UpdatedAt = value.Time
 			}
 		case document.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -166,6 +193,15 @@ func (d *Document) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", d.ID))
 	builder.WriteString("title=")
 	builder.WriteString(d.Title)
+	builder.WriteString(", ")
+	builder.WriteString("text=")
+	builder.WriteString(d.Text)
+	builder.WriteString(", ")
+	builder.WriteString("created_at=")
+	builder.WriteString(d.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("updated_at=")
+	builder.WriteString(d.UpdatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

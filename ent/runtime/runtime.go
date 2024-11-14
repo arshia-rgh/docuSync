@@ -15,6 +15,18 @@ import (
 func init() {
 	documentHooks := schema.Document{}.Hooks()
 	document.Hooks[0] = documentHooks[0]
+	documentFields := schema.Document{}.Fields()
+	_ = documentFields
+	// documentDescCreatedAt is the schema descriptor for created_at field.
+	documentDescCreatedAt := documentFields[2].Descriptor()
+	// document.DefaultCreatedAt holds the default value on creation for the created_at field.
+	document.DefaultCreatedAt = documentDescCreatedAt.Default.(time.Time)
+	// documentDescUpdatedAt is the schema descriptor for updated_at field.
+	documentDescUpdatedAt := documentFields[3].Descriptor()
+	// document.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	document.DefaultUpdatedAt = documentDescUpdatedAt.Default.(time.Time)
+	// document.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	document.UpdateDefaultUpdatedAt = documentDescUpdatedAt.UpdateDefault.(func() time.Time)
 	userFields := schema.User{}.Fields()
 	_ = userFields
 	// userDescPassword is the schema descriptor for password field.

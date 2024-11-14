@@ -36,6 +36,9 @@ type DocumentMutation struct {
 	typ                  string
 	id                   *int
 	title                *string
+	text                 *string
+	created_at           *time.Time
+	updated_at           *time.Time
 	clearedFields        map[string]struct{}
 	editors              map[int]struct{}
 	removededitors       map[int]struct{}
@@ -195,6 +198,127 @@ func (m *DocumentMutation) TitleCleared() bool {
 func (m *DocumentMutation) ResetTitle() {
 	m.title = nil
 	delete(m.clearedFields, document.FieldTitle)
+}
+
+// SetText sets the "text" field.
+func (m *DocumentMutation) SetText(s string) {
+	m.text = &s
+}
+
+// Text returns the value of the "text" field in the mutation.
+func (m *DocumentMutation) Text() (r string, exists bool) {
+	v := m.text
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldText returns the old "text" field's value of the Document entity.
+// If the Document object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DocumentMutation) OldText(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldText is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldText requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldText: %w", err)
+	}
+	return oldValue.Text, nil
+}
+
+// ClearText clears the value of the "text" field.
+func (m *DocumentMutation) ClearText() {
+	m.text = nil
+	m.clearedFields[document.FieldText] = struct{}{}
+}
+
+// TextCleared returns if the "text" field was cleared in this mutation.
+func (m *DocumentMutation) TextCleared() bool {
+	_, ok := m.clearedFields[document.FieldText]
+	return ok
+}
+
+// ResetText resets all changes to the "text" field.
+func (m *DocumentMutation) ResetText() {
+	m.text = nil
+	delete(m.clearedFields, document.FieldText)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *DocumentMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *DocumentMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Document entity.
+// If the Document object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DocumentMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *DocumentMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *DocumentMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *DocumentMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the Document entity.
+// If the Document object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DocumentMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *DocumentMutation) ResetUpdatedAt() {
+	m.updated_at = nil
 }
 
 // AddEditorIDs adds the "editors" edge to the User entity by ids.
@@ -378,9 +502,18 @@ func (m *DocumentMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *DocumentMutation) Fields() []string {
-	fields := make([]string, 0, 1)
+	fields := make([]string, 0, 4)
 	if m.title != nil {
 		fields = append(fields, document.FieldTitle)
+	}
+	if m.text != nil {
+		fields = append(fields, document.FieldText)
+	}
+	if m.created_at != nil {
+		fields = append(fields, document.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, document.FieldUpdatedAt)
 	}
 	return fields
 }
@@ -392,6 +525,12 @@ func (m *DocumentMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case document.FieldTitle:
 		return m.Title()
+	case document.FieldText:
+		return m.Text()
+	case document.FieldCreatedAt:
+		return m.CreatedAt()
+	case document.FieldUpdatedAt:
+		return m.UpdatedAt()
 	}
 	return nil, false
 }
@@ -403,6 +542,12 @@ func (m *DocumentMutation) OldField(ctx context.Context, name string) (ent.Value
 	switch name {
 	case document.FieldTitle:
 		return m.OldTitle(ctx)
+	case document.FieldText:
+		return m.OldText(ctx)
+	case document.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case document.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Document field %s", name)
 }
@@ -418,6 +563,27 @@ func (m *DocumentMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTitle(v)
+		return nil
+	case document.FieldText:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetText(v)
+		return nil
+	case document.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case document.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Document field %s", name)
@@ -452,6 +618,9 @@ func (m *DocumentMutation) ClearedFields() []string {
 	if m.FieldCleared(document.FieldTitle) {
 		fields = append(fields, document.FieldTitle)
 	}
+	if m.FieldCleared(document.FieldText) {
+		fields = append(fields, document.FieldText)
+	}
 	return fields
 }
 
@@ -469,6 +638,9 @@ func (m *DocumentMutation) ClearField(name string) error {
 	case document.FieldTitle:
 		m.ClearTitle()
 		return nil
+	case document.FieldText:
+		m.ClearText()
+		return nil
 	}
 	return fmt.Errorf("unknown Document nullable field %s", name)
 }
@@ -479,6 +651,15 @@ func (m *DocumentMutation) ResetField(name string) error {
 	switch name {
 	case document.FieldTitle:
 		m.ResetTitle()
+		return nil
+	case document.FieldText:
+		m.ResetText()
+		return nil
+	case document.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case document.FieldUpdatedAt:
+		m.ResetUpdatedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Document field %s", name)
