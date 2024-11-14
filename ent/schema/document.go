@@ -49,9 +49,9 @@ func (Document) Hooks() []ent.Hook {
 			func(next ent.Mutator) ent.Mutator {
 				return hook.DocumentFunc(func(ctx context.Context, m *gen.DocumentMutation) (gen.Value, error) {
 					if title, exists := m.Title(); !exists || title == "" {
-						iD, _ := m.ID()
+						createdAt, _ := m.CreatedAt()
 						ownerID, _ := m.OwnerID()
-						m.SetTitle(fmt.Sprintf("doc-%d-owner-%d", iD, ownerID))
+						m.SetTitle(fmt.Sprintf("doc-%v-owner-%v", createdAt, ownerID))
 					}
 					return next.Mutate(ctx, m)
 				})
