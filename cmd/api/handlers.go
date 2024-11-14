@@ -107,6 +107,7 @@ func (app *Config) loginUser(c *fiber.Ctx) error {
 	})
 }
 
+// me is protected by auth
 func (app *Config) me(c *fiber.Ctx) error {
 	userID := c.Locals("user").(int)
 
@@ -130,6 +131,7 @@ func (app *Config) me(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(user)
 }
 
+// updateUser uses the UserUpdate schema and protected by auth
 func (app *Config) updateUser(c *fiber.Ctx) error {
 	user := new(UserUpdate)
 	if err := c.BodyParser(user); err != nil {
