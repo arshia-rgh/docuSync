@@ -3,6 +3,7 @@ package schema
 import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
+	"entgo.io/ent/schema/field"
 )
 
 // Document holds the schema definition for the Document entity.
@@ -12,7 +13,9 @@ type Document struct {
 
 // Fields of the Document.
 func (Document) Fields() []ent.Field {
-	return nil
+	return []ent.Field{
+		field.String("title").Unique().Default(""),
+	}
 }
 
 // Edges of the Document.
