@@ -163,6 +163,12 @@ func (app *Config) updateUser(c *fiber.Ctx) error {
 	dbUser, err := update.Save(ctx)
 	if err != nil {
 		log.Println(err.Error())
+		if ent.IsValidationError(err) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "validation error",
+				"error":   err.Error(),
+			})
+		}
 		if ent.IsNotFound(err) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"message": "no user found",
@@ -176,7 +182,74 @@ func (app *Config) updateUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(dbUser)
 }
 
-// changePassword uses ChangePassword schema
+// changePassword uses ChangePassword schema and protected by auth
 func (app *Config) changePassword(c *fiber.Ctx) error {
+	newPasswordData := new(ChangePassword)
 
+	if err := c.BodyParser(newPasswordData); err != nil {
+		log.Println(err.Error())
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "invalid data",
+			"error":   err.Error(),
+		})
+	}
+
+	userID := c.Locals("user").(int)
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	user, err := app.client.User.Get(ctx, userID)
+
+	if err != nil {
+		log.Println(err.Error())
+		if ent.IsNotFound(err) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"message": "no user found",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "internal server error",
+		})
+	}
+
+	if !utils.VerifyPassword(newPasswordData.OldPassword, user.Password) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "your old password is wrong",
+		})
+	}
+	if newPasswordData.NewPassword != newPasswordData.ConfirmPassword {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "passwords arent same",
+		})
+	}
+
+	newHashedPassword, err := utils.HashPassword(newPasswordData.NewPassword)
+	if err != nil {
+		log.Println(err.Error())
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "failed to update password",
+		})
+	}
+
+	dbUser, err := app.client.User.
+		UpdateOneID(userID).
+		SetPassword(newHashedPassword).
+		Save(ctx)
+	if err != nil {
+		log.Println(err.Error())
+		if ent.IsValidationError(err) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "validation error",
+				"error":   err.Error(),
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "internal server error",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "password changed successfully",
+		"detail":  dbUser,
+	})
 }
