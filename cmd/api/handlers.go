@@ -265,4 +265,26 @@ func (app *Config) createDocument(c *fiber.Ctx) error {
 			"error":   err.Error(),
 		})
 	}
+	userID := c.Locals("user").(int)
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	dbDocument, err := app.client.Document.
+		Create().
+		SetTitle(document.Title).
+		SetOwnerID(userID).
+		Save(ctx)
+
+	if err != nil {
+		log.Println(err.Error())
+		if ent.IsConstraintError(err) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "document with this title already exists",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "internal server error",
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(document)
 }
