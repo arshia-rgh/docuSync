@@ -37,3 +37,7 @@ type CreateDocument struct {
 type ChangeDocumentTitle struct {
 	Title string `json:"title"`
 }
+
+type AddDocumentText struct {
+	Text string `json:"text"`
+}

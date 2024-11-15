@@ -331,3 +331,7 @@ func (app *Config) changeDocumentTitle(c *fiber.Ctx) error {
 	}
 	return c.Status(fiber.StatusOK).JSON(dbDocument)
 }
+
+func (app *Config) addDocumentText(c *fiber.Ctx) error {
+
+}
