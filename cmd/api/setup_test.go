@@ -4,6 +4,8 @@ import (
 	"docuSync/ent/enttest"
 	"github.com/gofiber/fiber/v2"
 	"testing"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func setupTestApp(t *testing.T) (*fiber.App, *Config) {
