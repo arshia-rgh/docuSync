@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"docuSync/ent"
+	DocumentDB "docuSync/ent/document"
 	UserDB "docuSync/ent/user"
 	"docuSync/utils"
 	"github.com/gofiber/fiber/v2"
@@ -289,6 +290,43 @@ func (app *Config) createDocument(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(dbDocument)
 }
 
-func (app *Config) updateDocument(c *fiber.Ctx) error {
+func (app *Config) changeDocumentTitle(c *fiber.Ctx) error {
+	document := new(ChangeDocumentTitle)
 
+	if err := c.BodyParser(document); err != nil {
+		log.Println(err.Error())
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "invalid data",
+			"error":   err.Error(),
+		})
+	}
+
+	userID := c.Locals("user").(int)
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	dbDocument, err := app.client.Document.
+		Update().
+		Where(DocumentDB.HasOwnerWith(UserDB.IDEQ(userID))).
+		SetTitle(document.Title).
+		Save(ctx)
+
+	if err != nil {
+		log.Println(err.Error())
+		if ent.IsNotFound(err) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"message": "no document found for the current user",
+			})
+		}
+		if ent.IsConstraintError(err) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "document with this title already exists",
+			})
+		}
+
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "internal server error",
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(dbDocument)
 }

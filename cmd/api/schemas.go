@@ -33,3 +33,7 @@ type ChangePassword struct {
 type CreateDocument struct {
 	Title string `json:"title,omitempty"`
 }
+
+type ChangeDocumentTitle struct {
+	Title string `json:"title"`
+}
