@@ -290,6 +290,7 @@ func (app *Config) createDocument(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(dbDocument)
 }
 
+// changeDocumentTitle uses the ChangeDocumentTitle schema and protected by auth
 func (app *Config) changeDocumentTitle(c *fiber.Ctx) error {
 	document := new(ChangeDocumentTitle)
 
