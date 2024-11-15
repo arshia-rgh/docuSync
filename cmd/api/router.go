@@ -14,4 +14,5 @@ func (app *Config) registerProtectedRouter(server fiber.Router) {
 	// document handlers
 	server.Post("/document/create", app.createDocument)
 	server.Put("/document/change-title", app.changeDocumentTitle)
+	server.Post("/document/add-text/:id", app.addDocumentText)
 }

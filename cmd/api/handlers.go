@@ -333,5 +333,61 @@ func (app *Config) changeDocumentTitle(c *fiber.Ctx) error {
 }
 
 func (app *Config) addDocumentText(c *fiber.Ctx) error {
+	document := new(AddDocumentText)
 
+	if err := c.BodyParser(document); err != nil {
+		log.Println(err.Error())
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "invalid data",
+			"error":   err.Error(),
+		})
+	}
+	documentID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "wrong id",
+			"error":   err.Error(),
+		})
+	}
+
+	userID := c.Locals("user").(int)
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	_, err = app.client.Document.
+		UpdateOneID(documentID).
+		Where(DocumentDB.Or(
+			DocumentDB.HasOwnerWith(UserDB.IDEQ(userID)),
+			DocumentDB.HasAllowedUsersWith(UserDB.IDEQ(userID)),
+		)).
+		SetText(document.Text).
+		Save(ctx)
+
+	if err != nil {
+		log.Println(err.Error())
+		if ent.IsNotFound(err) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"message": "you are not owner of this document or dont have permission to this document",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "internal server error",
+		})
+	}
+
+	dbDocument, err := app.client.Document.
+		UpdateOneID(documentID).
+		AddEditorIDs(userID).
+		Save(ctx)
+	if err != nil {
+		log.Println(err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "internal server error",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message":  "document edited and saved successfully",
+		"document": dbDocument,
+	})
 }
