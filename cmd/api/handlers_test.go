@@ -46,3 +46,48 @@ func TestRegisterUser(t *testing.T) {
 	assert.Equal(t, user.Email, dbUser.Email)
 
 }
+
+func TestLoginUser(t *testing.T) {
+	server, app := setupTestApp(t)
+	server.Post("/register", app.registerUser)
+	server.Post("/login", app.loginUser)
+
+	// Register the user first
+	user := UserRegister{
+		Name:     "John",
+		LastName: "Doe",
+		Username: "johndoe",
+		Password: "password123",
+		Email:    "johndoe@example.com",
+	}
+
+	body, _ := json.Marshal(user)
+	req := httptest.NewRequest("POST", "/register", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := server.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Failed to execute request: %v", err)
+	}
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	// Now login with the registered user
+	loginData := UserLogin{
+		Username: "johndoe",
+		Password: "password123",
+	}
+	body, _ = json.Marshal(loginData)
+	req = httptest.NewRequest("POST", "/login", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err = server.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Failed to execute request: %v", err)
+	}
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var responseLogin map[string]string
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	_ = json.Unmarshal(bodyBytes, &responseLogin)
+
+	_, exists := responseLogin["code"]
+	assert.True(t, exists, "The `code` key should exists in the response")
+}
