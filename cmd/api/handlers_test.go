@@ -137,4 +137,11 @@ func TestUpdateUser(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, updateUserData.Name, responseUser.Name)
+
+	dbUser, err := app.client.User.Get(context.Background(), responseUser.ID)
+	if err != nil {
+		t.Fatalf("Failed to get user from database: %v", err)
+	}
+
+	assert.Equal(t, updateUserData.Name, dbUser.Name)
 }
