@@ -1,7 +1,7 @@
-POST localhost:8080/api/protected/document/create
+PUT localhost:8080/api/protected/document/change-title/170
 authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzE2OTM0MTMsInN1YiI6MTgzfQ.ZzKGeN6HREknhCobflBZmSIB-2-3zMOXQNDryGpC_lY
 content-type: application/json
 
 {
-  "title": "test title"
+  "title": "ashfoahsoifiasfassfasdjkf asfaops jkfpoa asf"
 }

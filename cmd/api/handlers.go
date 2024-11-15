@@ -301,13 +301,20 @@ func (app *Config) changeDocumentTitle(c *fiber.Ctx) error {
 			"error":   err.Error(),
 		})
 	}
+	documentID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "wrong id",
+			"error":   err.Error(),
+		})
+	}
 
 	userID := c.Locals("user").(int)
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
 	dbDocument, err := app.client.Document.
-		Update().
+		UpdateOneID(documentID).
 		Where(DocumentDB.HasOwnerWith(UserDB.IDEQ(userID))).
 		SetTitle(document.Title).
 		Save(ctx)
@@ -332,6 +339,7 @@ func (app *Config) changeDocumentTitle(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(dbDocument)
 }
 
+// addDocumentText uses AddDocumentText schema and protected by auth
 func (app *Config) addDocumentText(c *fiber.Ctx) error {
 	document := new(AddDocumentText)
 

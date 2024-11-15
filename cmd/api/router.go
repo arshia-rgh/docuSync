@@ -13,6 +13,6 @@ func (app *Config) registerProtectedRouter(server fiber.Router) {
 	server.Post("/me/change-password", app.changePassword)
 	// document handlers
 	server.Post("/document/create", app.createDocument)
-	server.Put("/document/change-title", app.changeDocumentTitle)
+	server.Put("/document/change-title/:id", app.changeDocumentTitle)
 	server.Post("/document/add-text/:id", app.addDocumentText)
 }
