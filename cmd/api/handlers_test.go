@@ -91,3 +91,50 @@ func TestLoginUser(t *testing.T) {
 	_, exists := responseLogin["code"]
 	assert.True(t, exists, "The `code` key should exists in the response")
 }
+
+func TestUpdateUser(t *testing.T) {
+	server, app := setupTestApp(t)
+	protectedServer := server.Group("/protected")
+	protectedServer.Use(app.authenticate)
+	protectedServer.Put("/me/update", app.updateUser)
+	server.Post("/login", app.loginUser)
+
+	setupTestUser(t)
+
+	loginData := UserLogin{
+		Username: "johndoe",
+		Password: "password123",
+	}
+	body, _ := json.Marshal(loginData)
+	req := httptest.NewRequest("POST", "/login", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := server.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Failed to execute request: %v", err)
+	}
+	var response map[string]string
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	_ = json.Unmarshal(bodyBytes, &response)
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	code := response["code"]
+
+	updateUserData := UserUpdate{
+		Name: "test John",
+	}
+	body, _ = json.Marshal(updateUserData)
+	req = httptest.NewRequest("PUT", "/protected/me/update", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", code)
+	resp, err = server.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Failed to execute request: %v", err)
+	}
+
+	var responseUser ent.User
+	bodyBytes, _ = io.ReadAll(resp.Body)
+	_ = json.Unmarshal(bodyBytes, &responseUser)
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, updateUserData.Name, responseUser.Name)
+}
