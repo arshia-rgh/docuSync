@@ -56,9 +56,12 @@ func registerHooks(lc fx.Lifecycle, cfg Config) {
 				if err != nil {
 					log.Fatalln(err)
 				}
+				cfg.Logger.Log("info", "starting HTTP server", map[string]any{"addr": webPort})
 			}()
 			return nil
 		},
-		OnStop: nil,
+		OnStop: func(ctx context.Context) error {
+			return cfg.Client.Close()
+		},
 	})
 }
