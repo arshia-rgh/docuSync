@@ -19,7 +19,7 @@ func (cfg *Config) registerUser(c *fiber.Ctx) error {
 	user := new(UserRegister)
 
 	if err := c.BodyParser(user); err != nil {
-		log.Println(err.Error())
+		cfg.Logger.Log("warning", "Parsing data in the registerUser handler failed", map[string]any{"err": err.Error()})
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "invalid data ",
 			"error":   err.Error(),
@@ -39,22 +39,25 @@ func (cfg *Config) registerUser(c *fiber.Ctx) error {
 		SetEmail(user.Email).
 		Save(ctx)
 	if err != nil {
-		log.Println(err.Error())
 		if ent.IsValidationError(err) {
+			cfg.Logger.Log("warning", "Saving new user in the registerUser handler to the DB failed because of the validation error", map[string]any{"error": err.Error()})
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"message": "validation error",
 				"error":   err.Error(),
 			})
 		}
 		if ent.IsConstraintError(err) {
+			cfg.Logger.Log("warning", "Saving new user in the registerUser handler to the DB failed because of the constraint error", map[string]any{"error": err.Error()})
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"message": "username or email already exists",
 			})
 		}
+		cfg.Logger.Log("error", "Saving new user in the registerUser handler to the DB failed because of the server error", map[string]any{"error": err.Error()})
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "failed to create user",
 		})
 	}
+	cfg.Logger.Log("info", "New user successfully registered and added to the DB", map[string]any{"user": newUser})
 	return c.Status(fiber.StatusOK).JSON(newUser)
 
 }
