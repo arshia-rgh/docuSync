@@ -8,13 +8,13 @@ import (
 	"time"
 )
 
-func (app *Config) requestLogger(c *fiber.Ctx) error {
+func (cfg *Config) requestLogger(c *fiber.Ctx) error {
 	start := time.Now()
 
 	// Process request
 	err := c.Next()
 
-	app.logger.Log("info", "Request received", map[string]any{
+	cfg.logger.Log("info", "Request received", map[string]any{
 		"Method":   c.Method(),
 		"URL":      c.OriginalURL(),
 		"Status":   c.Response().StatusCode(),
@@ -24,7 +24,7 @@ func (app *Config) requestLogger(c *fiber.Ctx) error {
 	return err
 }
 
-func (app *Config) authenticate(c *fiber.Ctx) error {
+func (cfg *Config) authenticate(c *fiber.Ctx) error {
 	token := c.Get("authorization")
 
 	if len(token) == 0 {

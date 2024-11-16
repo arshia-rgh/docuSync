@@ -4,18 +4,18 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func (app *Config) registerPublicRouter(server fiber.Router) {
-	server.Post("/register", app.registerUser)
-	server.Post("/login", app.loginUser)
+func (cfg *Config) registerPublicRouter(server fiber.Router) {
+	server.Post("/register", cfg.registerUser)
+	server.Post("/login", cfg.loginUser)
 }
 
-func (app *Config) registerProtectedRouter(server fiber.Router) {
-	server.Get("/me", app.me)
-	server.Put("/me/update", app.updateUser)
-	server.Post("/me/change-password", app.changePassword)
+func (cfg *Config) registerProtectedRouter(server fiber.Router) {
+	server.Get("/me", cfg.me)
+	server.Put("/me/update", cfg.updateUser)
+	server.Post("/me/change-password", cfg.changePassword)
 	// document handlers
-	server.Post("/document/create", app.createDocument)
-	server.Put("/document/change-title/:id", app.changeDocumentTitle)
-	server.Post("/document/add-text/:id", app.addDocumentText)
-	server.Post("/document/add-user/:id", app.addUserToTheAllowedEditorsOfDocument)
+	server.Post("/document/create", cfg.createDocument)
+	server.Put("/document/change-title/:id", cfg.changeDocumentTitle)
+	server.Post("/document/add-text/:id", cfg.addDocumentText)
+	server.Post("/document/add-user/:id", cfg.addUserToTheAllowedEditorsOfDocument)
 }

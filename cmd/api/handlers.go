@@ -15,7 +15,7 @@ import (
 const dbTimeout = time.Second * 3
 
 // registerUser uses the UserRegister schema
-func (app *Config) registerUser(c *fiber.Ctx) error {
+func (cfg *Config) registerUser(c *fiber.Ctx) error {
 	user := new(UserRegister)
 
 	if err := c.BodyParser(user); err != nil {
@@ -30,7 +30,7 @@ func (app *Config) registerUser(c *fiber.Ctx) error {
 	defer cancel()
 
 	hashPass, _ := utils.HashPassword(user.Password)
-	newUser, err := app.client.User.
+	newUser, err := cfg.client.User.
 		Create().
 		SetName(user.Name).
 		SetLastName(user.LastName).
@@ -60,7 +60,7 @@ func (app *Config) registerUser(c *fiber.Ctx) error {
 }
 
 // loginUser uses the UserLogin schema
-func (app *Config) loginUser(c *fiber.Ctx) error {
+func (cfg *Config) loginUser(c *fiber.Ctx) error {
 	user := new(UserLogin)
 	if err := c.BodyParser(user); err != nil {
 		log.Println(err.Error())
@@ -72,7 +72,7 @@ func (app *Config) loginUser(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
-	dbUser, err := app.client.User.
+	dbUser, err := cfg.client.User.
 		Query().
 		Where(UserDB.UsernameEQ(user.Username)).
 		Only(ctx)
@@ -110,12 +110,12 @@ func (app *Config) loginUser(c *fiber.Ctx) error {
 }
 
 // me is protected by auth
-func (app *Config) me(c *fiber.Ctx) error {
+func (cfg *Config) me(c *fiber.Ctx) error {
 	userID := c.Locals("user").(int)
 
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
-	user, err := app.client.User.
+	user, err := cfg.client.User.
 		Get(ctx, userID)
 
 	if err != nil {
@@ -134,7 +134,7 @@ func (app *Config) me(c *fiber.Ctx) error {
 }
 
 // updateUser uses the UserUpdate schema and protected by auth
-func (app *Config) updateUser(c *fiber.Ctx) error {
+func (cfg *Config) updateUser(c *fiber.Ctx) error {
 	user := new(UserUpdate)
 	if err := c.BodyParser(user); err != nil {
 		log.Println(err.Error())
@@ -148,7 +148,7 @@ func (app *Config) updateUser(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	update := app.client.User.UpdateOneID(userID)
+	update := cfg.client.User.UpdateOneID(userID)
 	if user.Name != "" {
 		update.SetName(user.Name)
 	}
@@ -185,7 +185,7 @@ func (app *Config) updateUser(c *fiber.Ctx) error {
 }
 
 // changePassword uses ChangePassword schema and protected by auth
-func (app *Config) changePassword(c *fiber.Ctx) error {
+func (cfg *Config) changePassword(c *fiber.Ctx) error {
 	newPasswordData := new(ChangePassword)
 
 	if err := c.BodyParser(newPasswordData); err != nil {
@@ -200,7 +200,7 @@ func (app *Config) changePassword(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	user, err := app.client.User.Get(ctx, userID)
+	user, err := cfg.client.User.Get(ctx, userID)
 
 	if err != nil {
 		log.Println(err.Error())
@@ -233,7 +233,7 @@ func (app *Config) changePassword(c *fiber.Ctx) error {
 		})
 	}
 
-	dbUser, err := app.client.User.
+	dbUser, err := cfg.client.User.
 		UpdateOneID(userID).
 		SetPassword(newHashedPassword).
 		Save(ctx)
@@ -257,7 +257,7 @@ func (app *Config) changePassword(c *fiber.Ctx) error {
 }
 
 // createDocument uses CreateDocument schema and protected by auth
-func (app *Config) createDocument(c *fiber.Ctx) error {
+func (cfg *Config) createDocument(c *fiber.Ctx) error {
 	document := new(CreateDocument)
 
 	if err := c.BodyParser(document); err != nil {
@@ -271,7 +271,7 @@ func (app *Config) createDocument(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	dbDocument, err := app.client.Document.
+	dbDocument, err := cfg.client.Document.
 		Create().
 		SetTitle(document.Title).
 		SetOwnerID(userID).
@@ -292,7 +292,7 @@ func (app *Config) createDocument(c *fiber.Ctx) error {
 }
 
 // changeDocumentTitle uses the ChangeDocumentTitle schema and protected by auth
-func (app *Config) changeDocumentTitle(c *fiber.Ctx) error {
+func (cfg *Config) changeDocumentTitle(c *fiber.Ctx) error {
 	document := new(ChangeDocumentTitle)
 
 	if err := c.BodyParser(document); err != nil {
@@ -314,7 +314,7 @@ func (app *Config) changeDocumentTitle(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	dbDocument, err := app.client.Document.
+	dbDocument, err := cfg.client.Document.
 		UpdateOneID(documentID).
 		Where(DocumentDB.HasOwnerWith(UserDB.IDEQ(userID))).
 		SetTitle(document.Title).
@@ -341,7 +341,7 @@ func (app *Config) changeDocumentTitle(c *fiber.Ctx) error {
 }
 
 // addDocumentText uses AddDocumentText schema and protected by auth
-func (app *Config) addDocumentText(c *fiber.Ctx) error {
+func (cfg *Config) addDocumentText(c *fiber.Ctx) error {
 	document := new(AddDocumentText)
 
 	if err := c.BodyParser(document); err != nil {
@@ -363,7 +363,7 @@ func (app *Config) addDocumentText(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	_, err = app.client.Document.
+	_, err = cfg.client.Document.
 		UpdateOneID(documentID).
 		Where(DocumentDB.Or(
 			DocumentDB.HasOwnerWith(UserDB.IDEQ(userID)),
@@ -384,7 +384,7 @@ func (app *Config) addDocumentText(c *fiber.Ctx) error {
 		})
 	}
 
-	dbDocument, err := app.client.Document.
+	dbDocument, err := cfg.client.Document.
 		UpdateOneID(documentID).
 		AddEditorIDs(userID).
 		Save(ctx)
@@ -401,7 +401,7 @@ func (app *Config) addDocumentText(c *fiber.Ctx) error {
 	})
 }
 
-func (app *Config) addUserToTheAllowedEditorsOfDocument(c *fiber.Ctx) error {
+func (cfg *Config) addUserToTheAllowedEditorsOfDocument(c *fiber.Ctx) error {
 	data := new(AddUserToTheAllowedEditorsOfDocument)
 
 	if err := c.BodyParser(data); err != nil {
@@ -424,7 +424,7 @@ func (app *Config) addUserToTheAllowedEditorsOfDocument(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	dbDocument, err := app.client.Document.
+	dbDocument, err := cfg.client.Document.
 		UpdateOneID(documentID).
 		Where(DocumentDB.HasOwnerWith(UserDB.IDEQ(userID))).
 		AddAllowedUserIDs(data.UserID).
