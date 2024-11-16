@@ -174,6 +174,7 @@ func TestChangePassword(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	code := response["code"]
 
+	// test to change the password
 	changePasswordData := ChangePassword{
 		OldPassword:     "password123",
 		NewPassword:     "Test Pass 12",
