@@ -11,54 +11,54 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/helmet"
 	"github.com/gofiber/fiber/v2/middleware/monitor"
 	"github.com/gofiber/fiber/v2/middleware/pprof"
-	"go.uber.org/zap"
+	"go.uber.org/fx"
 	"log"
 )
 
 const webPort = 8080
 
 type Config struct {
+	fx.In
 	client *ent.Client
 	logger *logger.Logger
 }
 
 func main() {
-	// DB and ent initialization
-	client := initDB()
-	defer client.Close()
+	app := fx.New(
+		AppModule,
+		fx.Invoke(registerHooks),
+	)
+	app.Run()
+}
 
-	if err := client.Schema.Create(context.TODO()); err != nil {
-		log.Fatalf("failed creating schema resources: %v", err)
-	}
-	log.Println("migration done")
+func registerHooks(lc fx.Lifecycle, cfg Config) {
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			// fiber server initialization
+			server := fiber.New()
+			server.Get("/metrics", monitor.New())
+			server.Use(pprof.New())
+			server.Use(cfg.requestLogger)
+			server.Use(healthcheck.New())
+			server.Use(helmet.New())
 
-	// Zap logger initialization
-	zapLogger := zap.NewExample()
-	defer zapLogger.Sync()
-	logger_ := logger.New(zapLogger)
+			// protected apis ( by auth )
+			protectedAPIS := server.Group("/api/protected")
+			protectedAPIS.Use(cfg.authenticate)
+			cfg.registerProtectedRouter(protectedAPIS)
 
-	// main app initialization
-	app := Config{client: client, logger: logger_}
+			// public apis
+			publicAPIS := server.Group("/api")
+			cfg.registerPublicRouter(publicAPIS)
 
-	// fiber server initialization
-	server := fiber.New()
-	server.Get("/metrics", monitor.New())
-	server.Use(pprof.New())
-	server.Use(app.requestLogger)
-	server.Use(healthcheck.New())
-	server.Use(helmet.New())
-
-	// protected apis ( by auth )
-	protectedAPIS := server.Group("/api/protected")
-	protectedAPIS.Use(app.authenticate)
-	app.registerProtectedRouter(protectedAPIS)
-
-	// public apis
-	publicAPIS := server.Group("/api")
-	app.registerPublicRouter(publicAPIS)
-
-	err := server.Listen(fmt.Sprintf(":%v", webPort))
-	if err != nil {
-		log.Fatalln(err)
-	}
+			go func() {
+				err := server.Listen(fmt.Sprintf(":%v", webPort))
+				if err != nil {
+					log.Fatalln(err)
+				}
+			}()
+			return nil
+		},
+		OnStop: nil,
+	})
 }
