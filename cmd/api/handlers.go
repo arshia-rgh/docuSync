@@ -66,7 +66,7 @@ func (cfg *Config) registerUser(c *fiber.Ctx) error {
 func (cfg *Config) loginUser(c *fiber.Ctx) error {
 	user := new(UserLogin)
 	if err := c.BodyParser(user); err != nil {
-		log.Println(err.Error())
+		cfg.Logger.Log("warning", "Parsing data in the loginUser handler failed", map[string]any{"err": err.Error()})
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "invalid data",
 			"error":   err.Error(),
@@ -80,12 +80,13 @@ func (cfg *Config) loginUser(c *fiber.Ctx) error {
 		Where(UserDB.UsernameEQ(user.Username)).
 		Only(ctx)
 	if err != nil {
-		log.Println(err.Error())
 		if ent.IsNotFound(err) {
+			cfg.Logger.Log("warning", "Retrieving user in the loginUser handler from the DB failed because of the NotFound error", map[string]any{"error": err.Error()})
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"message": "failed to find user with given username",
 			})
 		}
+		cfg.Logger.Log("error", "Retrieving user in the loginUser handler from the DB failed because of the server error", map[string]any{"error": err.Error()})
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "internal server error",
 		})
@@ -101,12 +102,13 @@ func (cfg *Config) loginUser(c *fiber.Ctx) error {
 
 	token, err := utils.GenerateToken(dbUser.ID)
 	if err != nil {
-		log.Println(err.Error())
+		cfg.Logger.Log("error", "generate token for the user in the loginUser handler failed because of the server error", map[string]any{"error": err.Error()})
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "failed to generate token",
 		})
 	}
 
+	cfg.Logger.Log("info", "New token generated and sent to the user", map[string]any{"userID": dbUser.ID, "token": token})
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"code": token,
 	})
