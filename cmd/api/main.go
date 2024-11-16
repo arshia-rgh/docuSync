@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/healthcheck"
 	"github.com/gofiber/fiber/v2/middleware/helmet"
+	"github.com/gofiber/fiber/v2/middleware/monitor"
 	"go.uber.org/zap"
 	"log"
 )
@@ -40,6 +41,7 @@ func main() {
 
 	// fiber server initialization
 	server := fiber.New()
+	server.Get("/metrics", monitor.New())
 	server.Use(app.requestLogger)
 	server.Use(healthcheck.New())
 	server.Use(helmet.New())
