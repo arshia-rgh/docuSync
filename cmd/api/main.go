@@ -19,8 +19,8 @@ const webPort = 8080
 
 type Config struct {
 	fx.In
-	client *ent.Client
-	logger *logger.Logger
+	Client *ent.Client
+	Logger *logger.Logger
 }
 
 func main() {
