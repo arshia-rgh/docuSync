@@ -422,6 +422,7 @@ func (cfg *Config) addDocumentText(c *fiber.Ctx) error {
 	})
 }
 
+// addUserToTheAllowedEditorsOfDocument uses AddUserToTheAllowedEditorsOfDocument schema and protected by auth
 func (cfg *Config) addUserToTheAllowedEditorsOfDocument(c *fiber.Ctx) error {
 	data := new(AddUserToTheAllowedEditorsOfDocument)
 
