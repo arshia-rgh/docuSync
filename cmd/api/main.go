@@ -7,6 +7,8 @@ import (
 	"docuSync/logger"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/healthcheck"
+	"github.com/gofiber/fiber/v2/middleware/helmet"
 	"go.uber.org/zap"
 	"log"
 )
@@ -39,6 +41,8 @@ func main() {
 	// fiber server initialization
 	server := fiber.New()
 	server.Use(app.requestLogger)
+	server.Use(healthcheck.New())
+	server.Use(helmet.New())
 
 	// protected apis ( by auth )
 	protectedAPIS := server.Group("/api/protected")

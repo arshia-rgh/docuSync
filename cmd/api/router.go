@@ -1,8 +1,12 @@
 package main
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/monitor"
+)
 
 func (app *Config) registerPublicRouter(server fiber.Router) {
+	server.Get("/metrics", monitor.New())
 	server.Post("/register", app.registerUser)
 	server.Post("/login", app.loginUser)
 }
