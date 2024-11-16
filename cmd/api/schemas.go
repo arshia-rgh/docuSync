@@ -43,4 +43,5 @@ type AddDocumentText struct {
 }
 
 type AddUserToTheAllowedEditorsOfDocument struct {
+	UserID int `json:"user_id"`
 }

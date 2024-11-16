@@ -6,6 +6,7 @@ import (
 	DocumentDB "docuSync/ent/document"
 	UserDB "docuSync/ent/user"
 	"docuSync/utils"
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"log"
 	"time"
@@ -401,5 +402,45 @@ func (app *Config) addDocumentText(c *fiber.Ctx) error {
 }
 
 func (app *Config) addUserToTheAllowedEditorsOfDocument(c *fiber.Ctx) error {
+	data := new(AddUserToTheAllowedEditorsOfDocument)
+
+	if err := c.BodyParser(data); err != nil {
+		log.Println(err.Error())
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "invalid data",
+			"error":   err.Error(),
+		})
+	}
+
+	documentID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "wrong id",
+			"error":   err.Error(),
+		})
+	}
+
+	userID := c.Locals("user").(int)
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	dbDocument, err := app.client.Document.
+		UpdateOneID(documentID).
+		Where(DocumentDB.HasOwnerWith(UserDB.IDEQ(userID))).
+		AddAllowedUserIDs(data.UserID).
+		Save(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"message": "you are not owner of this document",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "internal server error",
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": fmt.Sprintf("the user with %v id added as allowed editor to the document with %v id", userID, dbDocument.ID),
+	})
 
 }
