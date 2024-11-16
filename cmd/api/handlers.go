@@ -8,7 +8,6 @@ import (
 	"docuSync/utils"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
-	"log"
 	"time"
 )
 
@@ -198,7 +197,7 @@ func (cfg *Config) changePassword(c *fiber.Ctx) error {
 	newPasswordData := new(ChangePassword)
 
 	if err := c.BodyParser(newPasswordData); err != nil {
-		log.Println(err.Error())
+		cfg.Logger.Log("warning", "Parsing data in the changePassword handler failed", map[string]any{"err": err.Error()})
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "invalid data",
 			"error":   err.Error(),
@@ -212,12 +211,13 @@ func (cfg *Config) changePassword(c *fiber.Ctx) error {
 	user, err := cfg.Client.User.Get(ctx, userID)
 
 	if err != nil {
-		log.Println(err.Error())
 		if ent.IsNotFound(err) {
+			cfg.Logger.Log("warning", "Retrieving user in the changePassword handler failed because of the NotFound error", map[string]any{"error": err.Error()})
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"message": "no user found",
 			})
 		}
+		cfg.Logger.Log("error", "Retrieving user in the changePassword handler failed because of the server error", map[string]any{"error": err.Error()})
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "internal server error",
 		})
@@ -236,7 +236,7 @@ func (cfg *Config) changePassword(c *fiber.Ctx) error {
 
 	newHashedPassword, err := utils.HashPassword(newPasswordData.NewPassword)
 	if err != nil {
-		log.Println(err.Error())
+		cfg.Logger.Log("error", "Hashing password failed in the changePassword handler", map[string]any{"error": err.Error()})
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "failed to update password",
 		})
@@ -247,18 +247,20 @@ func (cfg *Config) changePassword(c *fiber.Ctx) error {
 		SetPassword(newHashedPassword).
 		Save(ctx)
 	if err != nil {
-		log.Println(err.Error())
 		if ent.IsValidationError(err) {
+			cfg.Logger.Log("warning", "Changing password of the user in the changePassword handler failed because of the validation error", map[string]any{"error": err.Error()})
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"message": "validation error",
 				"error":   err.Error(),
 			})
 		}
+		cfg.Logger.Log("error", "Changing password of the user in the changePassword handler failed because of the server error", map[string]any{"error": err.Error()})
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "internal server error",
 		})
 	}
 
+	cfg.Logger.Log("error", "Changing password of the user in the changePassword handler successfully completed", map[string]any{"userID": userID})
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "password changed successfully",
 		"detail":  dbUser,
@@ -270,7 +272,7 @@ func (cfg *Config) createDocument(c *fiber.Ctx) error {
 	document := new(CreateDocument)
 
 	if err := c.BodyParser(document); err != nil {
-		log.Println(err.Error())
+		cfg.Logger.Log("warning", "Parsing data in the createDocument handler failed", map[string]any{"err": err.Error()})
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "invalid data",
 			"error":   err.Error(),
@@ -287,16 +289,20 @@ func (cfg *Config) createDocument(c *fiber.Ctx) error {
 		Save(ctx)
 
 	if err != nil {
-		log.Println(err.Error())
 		if ent.IsConstraintError(err) {
+			cfg.Logger.Log("warning", "Saving new document in the createDocument handler to the DB failed because of the constraint error", map[string]any{"error": err.Error()})
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"message": "document with this title already exists",
 			})
 		}
+
+		cfg.Logger.Log("error", "Saving new document in the createDocument handler to the DB failed because of the server error", map[string]any{"error": err.Error()})
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "internal server error",
 		})
 	}
+
+	cfg.Logger.Log("info", "Saving new document in the createDocument handler to the DB successfully completed", map[string]any{"document": dbDocument})
 	return c.Status(fiber.StatusOK).JSON(dbDocument)
 }
 
@@ -305,7 +311,7 @@ func (cfg *Config) changeDocumentTitle(c *fiber.Ctx) error {
 	document := new(ChangeDocumentTitle)
 
 	if err := c.BodyParser(document); err != nil {
-		log.Println(err.Error())
+		cfg.Logger.Log("warning", "Parsing data in the changeDocumentTitle handler failed", map[string]any{"err": err.Error()})
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "invalid data",
 			"error":   err.Error(),
@@ -330,22 +336,26 @@ func (cfg *Config) changeDocumentTitle(c *fiber.Ctx) error {
 		Save(ctx)
 
 	if err != nil {
-		log.Println(err.Error())
 		if ent.IsNotFound(err) {
+			cfg.Logger.Log("warning", "Changing document title in the changeDocumentTitle handler failed because of the NotFound error", map[string]any{"error": err.Error()})
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"message": "no document found for the current user",
 			})
 		}
 		if ent.IsConstraintError(err) {
+			cfg.Logger.Log("warning", "Changing document title in the changeDocumentTitle handler failed because of the constrain error", map[string]any{"error": err.Error()})
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"message": "document with this title already exists",
 			})
 		}
 
+		cfg.Logger.Log("error", "Changing document title in the changeDocumentTitle handler failed because of the server error", map[string]any{"error": err.Error()})
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "internal server error",
 		})
 	}
+
+	cfg.Logger.Log("error", "Changing document title in the changeDocumentTitle handler successfully completed", map[string]any{"document": dbDocument})
 	return c.Status(fiber.StatusOK).JSON(dbDocument)
 }
 
@@ -354,7 +364,7 @@ func (cfg *Config) addDocumentText(c *fiber.Ctx) error {
 	document := new(AddDocumentText)
 
 	if err := c.BodyParser(document); err != nil {
-		log.Println(err.Error())
+		cfg.Logger.Log("warning", "Parsing data in the addDocumentText handler failed", map[string]any{"err": err.Error()})
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "invalid data",
 			"error":   err.Error(),
@@ -382,12 +392,13 @@ func (cfg *Config) addDocumentText(c *fiber.Ctx) error {
 		Save(ctx)
 
 	if err != nil {
-		log.Println(err.Error())
 		if ent.IsNotFound(err) {
+			cfg.Logger.Log("warning", "adding text to the document in the addDocumentText handler failed because of the NotFound error", map[string]any{"error": err.Error()})
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"message": "you are not owner of this document or dont have permission to this document",
 			})
 		}
+		cfg.Logger.Log("error", "adding text to the document  in the addDocumentText handler failed because of the server error", map[string]any{"error": err.Error()})
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "internal server error",
 		})
@@ -398,12 +409,13 @@ func (cfg *Config) addDocumentText(c *fiber.Ctx) error {
 		AddEditorIDs(userID).
 		Save(ctx)
 	if err != nil {
-		log.Println(err)
+		cfg.Logger.Log("error", "adding new editor to the document in the addDocumentText handler failed because of the server error", map[string]any{"error": err.Error()})
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "internal server error",
 		})
 	}
 
+	cfg.Logger.Log("info", "adding text to the document in the addDocumentText handler successfully completed", map[string]any{"document": dbDocument})
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message":  "document edited and saved successfully",
 		"document": dbDocument,
@@ -414,7 +426,7 @@ func (cfg *Config) addUserToTheAllowedEditorsOfDocument(c *fiber.Ctx) error {
 	data := new(AddUserToTheAllowedEditorsOfDocument)
 
 	if err := c.BodyParser(data); err != nil {
-		log.Println(err.Error())
+		cfg.Logger.Log("warning", "Parsing data in the addUserToTheAllowedEditorsOfDocument handler failed", map[string]any{"err": err.Error()})
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "invalid data",
 			"error":   err.Error(),
@@ -440,14 +452,18 @@ func (cfg *Config) addUserToTheAllowedEditorsOfDocument(c *fiber.Ctx) error {
 		Save(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
+			cfg.Logger.Log("warning", "adding user as allowed editor to the document in the addUserToTheAllowedEditorsOfDocument handler failed because of the NotFound error", map[string]any{"error": err.Error()})
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"message": "you are not owner of this document",
 			})
 		}
+		cfg.Logger.Log("error", "adding user as allowed editor to the document in the addUserToTheAllowedEditorsOfDocument handler failed because of the server error", map[string]any{"error": err.Error()})
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "internal server error",
 		})
 	}
+
+	cfg.Logger.Log("info", "adding user as allowed editor to the document in the addUserToTheAllowedEditorsOfDocument handler successfully completed", map[string]any{"documentID": documentID, "userID": userID})
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": fmt.Sprintf("the user with %v id added as allowed editor to the document with %v id", userID, dbDocument.ID),
 	})
