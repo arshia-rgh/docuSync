@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"docuSync/ent"
+	"docuSync/utils"
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"io"
@@ -144,4 +145,62 @@ func TestUpdateUser(t *testing.T) {
 	}
 
 	assert.Equal(t, updateUserData.Name, dbUser.Name)
+}
+
+func TestChangePassword(t *testing.T) {
+	server, app := setupTestApp(t)
+	protectedServer := server.Group("/protected")
+	protectedServer.Use(app.authenticate)
+	protectedServer.Post("/me/change-password", app.changePassword)
+	server.Post("/login", app.loginUser)
+
+	setupTestUser(t)
+	// login with the user to get the token
+	loginData := UserLogin{
+		Username: "johndoe",
+		Password: "password123",
+	}
+	body, _ := json.Marshal(loginData)
+	req := httptest.NewRequest("POST", "/login", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := server.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Failed to execute request: %v", err)
+	}
+	var response map[string]string
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	_ = json.Unmarshal(bodyBytes, &response)
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	code := response["code"]
+
+	changePasswordData := ChangePassword{
+		OldPassword:     "password123",
+		NewPassword:     "Test Pass 12",
+		ConfirmPassword: "Test Pass 12",
+	}
+	body, _ = json.Marshal(changePasswordData)
+	req = httptest.NewRequest("POST", "/protected/me/change-password", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", code)
+	resp, err = server.Test(req, -1)
+	if err != nil {
+		t.Fatalf("Failed to execute request: %v", err)
+	}
+
+	var responseData map[string]any
+	bodyBytes, _ = io.ReadAll(resp.Body)
+	_ = json.Unmarshal(bodyBytes, &responseData)
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	detailBytes, _ := json.Marshal(responseData["detail"])
+	var responseUser ent.User
+	_ = json.Unmarshal(detailBytes, &responseUser)
+
+	dbUser, err := app.client.User.Get(context.Background(), responseUser.ID)
+	if err != nil {
+		t.Fatalf("Failed to get user from database: %v", err)
+	}
+	assert.True(t, utils.VerifyPassword("Test Pass 12", dbUser.Password))
 }
