@@ -41,3 +41,6 @@ type ChangeDocumentTitle struct {
 type AddDocumentText struct {
 	Text string `json:"text"`
 }
+
+type AddUserToTheAllowedEditorsOfDocument struct {
+}

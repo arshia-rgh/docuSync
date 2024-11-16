@@ -399,3 +399,7 @@ func (app *Config) addDocumentText(c *fiber.Ctx) error {
 		"document": dbDocument,
 	})
 }
+
+func (app *Config) addUserToTheAllowedEditorsOfDocument(c *fiber.Ctx) error {
+
+}
