@@ -124,12 +124,13 @@ func (cfg *Config) me(c *fiber.Ctx) error {
 		Get(ctx, userID)
 
 	if err != nil {
-		log.Println(err.Error())
+		cfg.Logger.Log("warning", "Retrieving user in the me handler from the DB failed because of the NotFound error", map[string]any{"error": err.Error()})
 		if ent.IsNotFound(err) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"message": "no user found",
 			})
 		}
+		cfg.Logger.Log("error", "Retrieving user in the me handler from the DB failed because of the server error", map[string]any{"error": err.Error()})
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "internal server error",
 		})
@@ -142,7 +143,7 @@ func (cfg *Config) me(c *fiber.Ctx) error {
 func (cfg *Config) updateUser(c *fiber.Ctx) error {
 	user := new(UserUpdate)
 	if err := c.BodyParser(user); err != nil {
-		log.Println(err.Error())
+		cfg.Logger.Log("warning", "Parsing data in the updateUser handler failed", map[string]any{"err": err.Error()})
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "invalid data ",
 			"error":   err.Error(),
@@ -169,23 +170,26 @@ func (cfg *Config) updateUser(c *fiber.Ctx) error {
 
 	dbUser, err := update.Save(ctx)
 	if err != nil {
-		log.Println(err.Error())
 		if ent.IsValidationError(err) {
+			cfg.Logger.Log("warning", "updating user in the updateUser handler to the DB failed because of the validation error", map[string]any{"error": err.Error()})
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"message": "validation error",
 				"error":   err.Error(),
 			})
 		}
 		if ent.IsNotFound(err) {
+			cfg.Logger.Log("warning", "updating user in the updateUser handler to the DB failed because of the NotFound error", map[string]any{"error": err.Error()})
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"message": "no user found",
 			})
 		}
+		cfg.Logger.Log("error", "updating user in the updateUser handler to the DB failed because of the server error", map[string]any{"error": err.Error()})
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "internal server error",
 		})
 	}
 
+	cfg.Logger.Log("info", "User in the updateUser handler successfully updated", map[string]any{"userID": userID})
 	return c.Status(fiber.StatusOK).JSON(dbUser)
 }
 
