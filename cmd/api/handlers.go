@@ -30,7 +30,7 @@ func (cfg *Config) registerUser(c *fiber.Ctx) error {
 	defer cancel()
 
 	hashPass, _ := utils.HashPassword(user.Password)
-	newUser, err := cfg.client.User.
+	newUser, err := cfg.Client.User.
 		Create().
 		SetName(user.Name).
 		SetLastName(user.LastName).
@@ -72,7 +72,7 @@ func (cfg *Config) loginUser(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
-	dbUser, err := cfg.client.User.
+	dbUser, err := cfg.Client.User.
 		Query().
 		Where(UserDB.UsernameEQ(user.Username)).
 		Only(ctx)
@@ -115,7 +115,7 @@ func (cfg *Config) me(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
-	user, err := cfg.client.User.
+	user, err := cfg.Client.User.
 		Get(ctx, userID)
 
 	if err != nil {
@@ -148,7 +148,7 @@ func (cfg *Config) updateUser(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	update := cfg.client.User.UpdateOneID(userID)
+	update := cfg.Client.User.UpdateOneID(userID)
 	if user.Name != "" {
 		update.SetName(user.Name)
 	}
@@ -200,7 +200,7 @@ func (cfg *Config) changePassword(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	user, err := cfg.client.User.Get(ctx, userID)
+	user, err := cfg.Client.User.Get(ctx, userID)
 
 	if err != nil {
 		log.Println(err.Error())
@@ -233,7 +233,7 @@ func (cfg *Config) changePassword(c *fiber.Ctx) error {
 		})
 	}
 
-	dbUser, err := cfg.client.User.
+	dbUser, err := cfg.Client.User.
 		UpdateOneID(userID).
 		SetPassword(newHashedPassword).
 		Save(ctx)
@@ -271,7 +271,7 @@ func (cfg *Config) createDocument(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	dbDocument, err := cfg.client.Document.
+	dbDocument, err := cfg.Client.Document.
 		Create().
 		SetTitle(document.Title).
 		SetOwnerID(userID).
@@ -314,7 +314,7 @@ func (cfg *Config) changeDocumentTitle(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	dbDocument, err := cfg.client.Document.
+	dbDocument, err := cfg.Client.Document.
 		UpdateOneID(documentID).
 		Where(DocumentDB.HasOwnerWith(UserDB.IDEQ(userID))).
 		SetTitle(document.Title).
@@ -363,7 +363,7 @@ func (cfg *Config) addDocumentText(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	_, err = cfg.client.Document.
+	_, err = cfg.Client.Document.
 		UpdateOneID(documentID).
 		Where(DocumentDB.Or(
 			DocumentDB.HasOwnerWith(UserDB.IDEQ(userID)),
@@ -384,7 +384,7 @@ func (cfg *Config) addDocumentText(c *fiber.Ctx) error {
 		})
 	}
 
-	dbDocument, err := cfg.client.Document.
+	dbDocument, err := cfg.Client.Document.
 		UpdateOneID(documentID).
 		AddEditorIDs(userID).
 		Save(ctx)
@@ -424,7 +424,7 @@ func (cfg *Config) addUserToTheAllowedEditorsOfDocument(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	dbDocument, err := cfg.client.Document.
+	dbDocument, err := cfg.Client.Document.
 		UpdateOneID(documentID).
 		Where(DocumentDB.HasOwnerWith(UserDB.IDEQ(userID))).
 		AddAllowedUserIDs(data.UserID).

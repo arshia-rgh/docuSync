@@ -14,7 +14,7 @@ func (cfg *Config) requestLogger(c *fiber.Ctx) error {
 	// Process request
 	err := c.Next()
 
-	cfg.logger.Log("info", "Request received", map[string]any{
+	cfg.Logger.Log("info", "Request received", map[string]any{
 		"Method":   c.Method(),
 		"URL":      c.OriginalURL(),
 		"Status":   c.Response().StatusCode(),
